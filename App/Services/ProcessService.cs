@@ -102,38 +102,83 @@ namespace SystemMonitor.Services
             try
             {
                 var currentTime = DateTime.Now;
-                var newProcesses = new Dictionary<int, ProcessInfo>();
 
-                foreach (var process in Process.GetProcesses().Where(p => !string.IsNullOrEmpty(p.ProcessName)))
+                // FIXED: Thực hiện việc lấy process data trên background thread
+                Task.Run(() =>
                 {
                     try
                     {
-                        var processInfo = CreateProcessInfo(process, currentTime);
-                        newProcesses[process.Id] = processInfo;
+                        var processData = new List<(int Id, string Name, long Memory, double Cpu, string Status, Process Process)>();
+
+                        foreach (var process in Process.GetProcesses().Where(p => !string.IsNullOrEmpty(p.ProcessName)))
+                        {
+                            try
+                            {
+                                var id = process.Id;
+                                var name = process.ProcessName;
+                                var memory = GetProcessMemoryUsage(process);
+                                var cpu = CalculateCpuUsage(process, currentTime);
+                                var status = GetProcessStatus(process);
+
+                                processData.Add((id, name, memory, cpu, status, process));
+                            }
+                            catch
+                            {
+                                continue;
+                            }
+                        }
+
+                        // FIXED: Tạo UI objects trên UI thread
+                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            try
+                            {
+                                var newProcesses = new Dictionary<int, ProcessInfo>();
+
+                                foreach (var data in processData)
+                                {
+                                    var processInfo = new ProcessInfo
+                                    {
+                                        Id = data.Id,
+                                        Name = data.Name,
+                                        MemoryUsage = data.Memory,
+                                        CpuUsage = data.Cpu,
+                                        Status = data.Status,
+                                        Icon = GetProcessIcon(data.Process)
+                                    };
+
+                                    newProcesses[data.Id] = processInfo;
+                                }
+
+                                lock (_lockObject)
+                                {
+                                    _allProcesses = newProcesses;
+                                }
+
+                                _lastUpdateTime = currentTime;
+                                UpdateDisplayedProcesses(isFullRefresh: true);
+                                UpdateProcessCountLabel();
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Windows.MessageBox.Show($"Lỗi khi cập nhật UI: {ex.Message}", "Lỗi",
+                                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                            }
+                        }));
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        continue;
+                        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            System.Windows.MessageBox.Show($"Lỗi khi lấy danh sách process: {ex.Message}", "Lỗi",
+                                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                        }));
                     }
-                }
-
-                lock (_lockObject)
-                {
-                    _allProcesses = newProcesses;
-                }
-
-                _lastUpdateTime = currentTime;
-
-                // Always update UI-bound collections and controls on the UI thread
-                Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    UpdateDisplayedProcesses(isFullRefresh: true);
-                    UpdateProcessCountLabel();
-                }));
+                });
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Lỗi khi lấy danh sách process: {ex.Message}", "Lỗi",
+                System.Windows.MessageBox.Show($"Lỗi khởi tạo: {ex.Message}", "Lỗi",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
@@ -146,17 +191,20 @@ namespace SystemMonitor.Services
                 var newProcesses = new Dictionary<int, ProcessInfo>();
                 var changedProcesses = new List<ProcessInfo>();
 
+                // FIXED: Tạo processes trên background thread, không tạo UI objects
+                var processData = new List<(int Id, string Name, long Memory, double Cpu, string Status, Process Process)>();
+
                 foreach (var process in Process.GetProcesses().Where(p => !string.IsNullOrEmpty(p.ProcessName)))
                 {
                     try
                     {
-                        var processInfo = CreateProcessInfo(process, currentTime);
-                        newProcesses[process.Id] = processInfo;
+                        var id = process.Id;
+                        var name = process.ProcessName;
+                        var memory = GetProcessMemoryUsage(process);
+                        var cpu = CalculateCpuUsage(process, currentTime);
+                        var status = GetProcessStatus(process);
 
-                        if (ShouldUpdateProcess(processInfo))
-                        {
-                            changedProcesses.Add(processInfo);
-                        }
+                        processData.Add((id, name, memory, cpu, status, process));
                     }
                     catch
                     {
@@ -164,22 +212,50 @@ namespace SystemMonitor.Services
                     }
                 }
 
-                lock (_lockObject)
+                // FIXED: Tạo ProcessInfo objects trên UI thread
+                Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    var removedProcessIds = _allProcesses.Keys.Except(newProcesses.Keys).ToList();
-                    _allProcesses = newProcesses;
-
-                    if (changedProcesses.Any() || removedProcessIds.Any())
+                    try
                     {
-                        Application.Current.Dispatcher.BeginInvoke(() =>
+                        foreach (var data in processData)
                         {
-                            UpdateDisplayedProcesses(isFullRefresh: false, changedProcesses, removedProcessIds);
-                        });
-                    }
-                }
+                            var processInfo = new ProcessInfo
+                            {
+                                Id = data.Id,
+                                Name = data.Name,
+                                MemoryUsage = data.Memory,
+                                CpuUsage = data.Cpu,
+                                Status = data.Status,
+                                Icon = GetProcessIcon(data.Process)
+                            };
 
-                _lastUpdateTime = currentTime;
-                CleanupOldProcesses();
+                            newProcesses[data.Id] = processInfo;
+
+                            if (ShouldUpdateProcess(processInfo))
+                            {
+                                changedProcesses.Add(processInfo);
+                            }
+                        }
+
+                        lock (_lockObject)
+                        {
+                            var removedProcessIds = _allProcesses.Keys.Except(newProcesses.Keys).ToList();
+                            _allProcesses = newProcesses;
+
+                            if (changedProcesses.Any() || removedProcessIds.Any())
+                            {
+                                UpdateDisplayedProcesses(isFullRefresh: false, changedProcesses, removedProcessIds);
+                            }
+                        }
+
+                        _lastUpdateTime = currentTime;
+                        CleanupOldProcesses();
+                    }
+                    catch (Exception)
+                    {
+                        // Bỏ qua lỗi trong quá trình cập nhật
+                    }
+                }));
             }
             catch (Exception)
             {
@@ -189,15 +265,28 @@ namespace SystemMonitor.Services
 
         private ProcessInfo CreateProcessInfo(Process process, DateTime currentTime)
         {
-            return new ProcessInfo
+            var processInfo = new ProcessInfo
             {
                 Id = process.Id,
                 Name = process.ProcessName,
-                MemoryUsage = GetProcessMemoryUsage(process), // FIXED
-                CpuUsage = CalculateCpuUsage(process, currentTime), // FIXED
-                Status = GetProcessStatus(process),
-                Icon = GetProcessIcon(process)
+                MemoryUsage = GetProcessMemoryUsage(process),
+                CpuUsage = CalculateCpuUsage(process, currentTime),
+                Status = GetProcessStatus(process)
             };
+
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                try
+                {
+                    processInfo.Icon = GetProcessIcon(process);
+                }
+                catch
+                {
+                    processInfo.Icon = null;
+                }
+            });
+
+            return processInfo;
         }
 
         private bool ShouldUpdateProcess(ProcessInfo newProcessInfo)
@@ -432,12 +521,15 @@ namespace SystemMonitor.Services
                 return "Không xác định";
             }
         }
-
-        // Các method khác giữ nguyên như cũ
         private ImageSource GetProcessIcon(Process process)
         {
             try
             {
+                if (!Application.Current.Dispatcher.CheckAccess())
+                {
+                    return Application.Current.Dispatcher.Invoke(() => GetProcessIcon(process));
+                }
+
                 string cacheKey = process.ProcessName.ToLower();
                 if (_iconCache.ContainsKey(cacheKey))
                 {
@@ -459,13 +551,14 @@ namespace SystemMonitor.Services
                                     icon.Handle,
                                     Int32Rect.Empty,
                                     BitmapSizeOptions.FromEmptyOptions());
+
+                                iconSource?.Freeze();
                             }
                         }
                     }
                 }
                 catch
                 {
-                    // Không thể lấy icon từ file
                 }
 
                 if (iconSource == null)
@@ -536,6 +629,12 @@ namespace SystemMonitor.Services
         {
             try
             {
+                // FIXED: Đảm bảo chạy trên UI thread
+                if (!Application.Current.Dispatcher.CheckAccess())
+                {
+                    return Application.Current.Dispatcher.Invoke(() => CreateTextIcon(text));
+                }
+
                 int width = 16, height = 16;
                 var bitmap = new System.Drawing.Bitmap(width, height);
 
@@ -561,6 +660,9 @@ namespace SystemMonitor.Services
                 var imageSource = Imaging.CreateBitmapSourceFromHBitmap(
                     hBitmap, IntPtr.Zero, Int32Rect.Empty,
                     BitmapSizeOptions.FromEmptyOptions());
+
+                // FIXED: Freeze để thread-safe
+                imageSource?.Freeze();
 
                 DeleteObject(hBitmap);
                 bitmap.Dispose();
