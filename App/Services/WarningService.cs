@@ -7,7 +7,10 @@ namespace SystemMonitor.Services
 {
     public class WarningService
     {
-        // Ngưỡng cảnh báo (có thể điều chỉnh)
+        // Thêm event cho background mode
+        public event EventHandler<string> WarningTriggered;
+
+        // Existing properties...
         public float CpuWarningThreshold { get; set; } = 85f;
         public float CpuTemperatureThreshold { get; set; } = 80f;
         public float RamWarningThreshold { get; set; } = 90f;
@@ -19,10 +22,13 @@ namespace SystemMonitor.Services
         private TextBlock _warningStatus;
         private Border _warningBorder;
 
-        // Trạng thái cảnh báo
+        // Background mode
+        public bool IsBackgroundMode { get; private set; } = false;
+
+        // Warning status
         private bool _isWarningActive = false;
         private DateTime _lastWarningTime = DateTime.MinValue;
-        private readonly TimeSpan _warningCooldown = TimeSpan.FromMinutes(2);
+        private readonly TimeSpan _warningCooldown = TimeSpan.FromSeconds(60);
         private DateTime _initTime = DateTime.Now;
 
         public void SetUIControls(TextBlock warningStatus, Border warningBorder)
@@ -31,72 +37,89 @@ namespace SystemMonitor.Services
             _warningBorder = warningBorder;
         }
 
+        public void SetBackgroundMode(bool isBackground)
+        {
+            IsBackgroundMode = isBackground;
+        }
+
         public void CheckSystemOverload(SystemInfoEventArgs systemInfo)
         {
             var warnings = new System.Collections.Generic.List<string>();
             bool isOverloaded = false;
 
-            // Chờ 5 giây sau khi khởi tạo
+            // Wait 5 seconds after initialization
             if (DateTime.Now - _initTime < TimeSpan.FromSeconds(5))
             {
                 return;
             }
 
-            // Kiểm tra CPU
+            // Existing warning checks...
             if (systemInfo.CpuUsage > CpuWarningThreshold)
             {
                 warnings.Add($"CPU: {systemInfo.CpuUsage:F1}%");
                 isOverloaded = true;
             }
 
-            // Kiểm tra nhiệt độ CPU
             if (systemInfo.CpuTemperature > CpuTemperatureThreshold)
             {
                 warnings.Add($"CPU Temp: {systemInfo.CpuTemperature:F1}°C");
                 isOverloaded = true;
             }
 
-            // Kiểm tra RAM
             if (systemInfo.RamUsage > RamWarningThreshold)
             {
                 warnings.Add($"RAM: {systemInfo.RamUsage:F1}%");
                 isOverloaded = true;
             }
 
-            // Kiểm tra GPU
             if (systemInfo.GpuUsage > GpuWarningThreshold)
             {
                 warnings.Add($"GPU: {systemInfo.GpuUsage:F1}%");
                 isOverloaded = true;
             }
 
-            // Kiểm tra nhiệt độ GPU
             if (systemInfo.GpuTemperature > GpuTemperatureThreshold)
             {
                 warnings.Add($"GPU Temp: {systemInfo.GpuTemperature:F1}°C");
                 isOverloaded = true;
             }
 
-            // Kiểm tra Disk
             if (systemInfo.DiskUsage > DiskWarningThreshold)
             {
                 warnings.Add($"Disk: {systemInfo.DiskUsage:F1}%");
                 isOverloaded = true;
             }
 
-            // Cập nhật UI và hiển thị cảnh báo
-            App.Current?.Dispatcher.Invoke(() =>
-            {
-                UpdateWarningUI(isOverloaded, warnings);
-            });
-
-            // Hiển thị popup cảnh báo nếu cần
+            // Handle warnings based on mode
             if (isOverloaded && ShouldShowWarning())
             {
-                ShowWarningPopup(warnings);
+                if (IsBackgroundMode)
+                {
+                    // Background mode: only trigger event
+                    string warningText = string.Join(", ", warnings);
+                    WarningTriggered?.Invoke(this, warningText);
+                }
+                else
+                {
+                    // Foreground mode: update UI and show popup
+                    App.Current?.Dispatcher.Invoke(() =>
+                    {
+                        UpdateWarningUI(isOverloaded, warnings);
+                    });
+                    ShowWarningPopup(warnings);
+                }
+            }
+            else if (!IsBackgroundMode)
+            {
+                // Only update UI when not in background mode
+                App.Current?.Dispatcher.Invoke(() =>
+                {
+                    UpdateWarningUI(isOverloaded, warnings);
+                });
             }
         }
 
+        // Existing methods remain the same...
         private void UpdateWarningUI(bool isOverloaded, System.Collections.Generic.List<string> warnings)
         {
             if (_warningStatus == null || _warningBorder == null) return;
@@ -104,23 +127,20 @@ namespace SystemMonitor.Services
             if (isOverloaded)
             {
                 _isWarningActive = true;
-
-                // Hiển thị chi tiết các vấn đề thay vì chỉ số lượng
-                string warningText = "⚠️ Vấn đề phát hiện: " + string.Join(" | ", warnings);
+                string warningText = "⚠️ Issues detected: " + string.Join(" | ", warnings);
                 _warningStatus.Text = warningText;
 
-                _warningBorder.Background = new SolidColorBrush(Color.FromRgb(255, 243, 205)); // Màu vàng nhạt
-                _warningBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(255, 193, 7)); // Màu vàng đậm
+                _warningBorder.Background = new SolidColorBrush(Color.FromRgb(255, 243, 205));
+                _warningBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(255, 193, 7));
                 _warningBorder.BorderThickness = new Thickness(2);
                 _warningBorder.Visibility = Visibility.Visible;
 
-                // Tooltip với thông tin chi tiết hơn
-                string tooltipText = "🚨 CHI TIẾT CẢNH BÁO:\n\n";
+                string tooltipText = "🚨 WARNING DETAILS:\n\n";
                 foreach (var warning in warnings)
                 {
                     tooltipText += "• " + warning + "\n";
                 }
-                tooltipText += "\n💡 Khuyến nghị: Kiểm tra và giảm tải các thành phần đang quá mức.";
+                tooltipText += "\n💡 Recommendation: Check and reduce load on overloaded components.";
                 _warningBorder.ToolTip = tooltipText;
             }
             else
@@ -128,15 +148,15 @@ namespace SystemMonitor.Services
                 if (_isWarningActive)
                 {
                     _isWarningActive = false;
-                    _warningStatus.Text = "✅ Hệ thống hoạt động bình thường";
-                    _warningBorder.Background = new SolidColorBrush(Color.FromRgb(212, 237, 218)); // Màu xanh nhạt  
-                    _warningBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(25, 135, 84)); // Màu xanh đậm
+                    _warningStatus.Text = "✅ System operating normally";
+                    _warningBorder.Background = new SolidColorBrush(Color.FromRgb(212, 237, 218));
+                    _warningBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(25, 135, 84));
                     _warningBorder.BorderThickness = new Thickness(1);
-                    _warningBorder.ToolTip = "Tất cả thông số hệ thống đều ở mức bình thường";
+                    _warningBorder.ToolTip = "All system parameters are at normal levels";
                 }
                 else
                 {
-                    _warningBorder.Visibility = Visibility.Collapsed; // Ẩn khi không có vấn đề
+                    _warningBorder.Visibility = Visibility.Collapsed;
                 }
             }
         }
@@ -150,26 +170,25 @@ namespace SystemMonitor.Services
         {
             _lastWarningTime = DateTime.Now;
 
-            string message = "⚠️ CẢNH BÁO HỆ THỐNG!\n\n";
-            message += "🔍 CÁC VẤN ĐỀ PHÁT HIỆN:\n";
+            string message = "⚠️ SYSTEM WARNING!\n\n";
+            message += "🔍 DETECTED ISSUES:\n";
 
             foreach (var warning in warnings)
             {
                 message += $"• {warning}\n";
             }
 
-            message += "\n💡 KHUYẾN NGHỊ:\n";
-            message += "• Đóng các ứng dụng không cần thiết\n";
-            message += "• Kiểm tra tản nhiệt hệ thống\n";
-            message += "• Giảm cường độ hoạt động của CPU/GPU\n";
-            message += "• Dọn dẹp RAM và ổ cứng nếu cần";
+            message += "\n💡 RECOMMENDATIONS:\n";
+            message += "• Close unnecessary applications\n";
+            message += "• Check system cooling\n";
+            message += "• Reduce CPU/GPU workload intensity\n";
+            message += "• Clean up RAM and hard drive if needed";
 
-            MessageBox.Show(message, "Cảnh báo hệ thống", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(message, "System Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
-        // Phương thức để người dùng tùy chỉnh ngưỡng cảnh báo
         public void UpdateThresholds(float cpuThreshold, float cpuTempThreshold, float ramThreshold,
-                                   float gpuThreshold, float gpuTempThreshold, float diskThreshold)
+                                    float gpuThreshold, float gpuTempThreshold, float diskThreshold)
         {
             CpuWarningThreshold = Math.Max(50, Math.Min(100, cpuThreshold));
             CpuTemperatureThreshold = Math.Max(60, Math.Min(100, cpuTempThreshold));

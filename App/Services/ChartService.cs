@@ -101,29 +101,21 @@ namespace SystemMonitor.Services
                 }
             };
 
+            // CPU Chart Axes - Chỉ cấu hình trục X, để XAML xử lý trục Y
             CpuChart.AxisX.Add(new Axis
             {
                 ShowLabels = false,
             });
 
-            CpuChart.AxisY.Add(new Axis
-            {
-                LabelFormatter = value => $"{value:F0}%",
-                MinValue = 0,
-                MaxValue = 100
-            });
+            // Không thêm AxisY ở đây - để XAML xử lý
 
+            // RAM Chart Axes - Chỉ cấu hình trục X, để XAML xử lý trục Y
             RamChart.AxisX.Add(new Axis
             {
                 ShowLabels = false,
             });
 
-            RamChart.AxisY.Add(new Axis
-            {
-                LabelFormatter = value => $"{value:F0}%",
-                MinValue = 0,
-                MaxValue = 100
-            });
+            // Không thêm AxisY ở đây - để XAML xử lý
 
             GpuChart.Series = new SeriesCollection
             {
@@ -151,33 +143,33 @@ namespace SystemMonitor.Services
                 }
             };
 
+            // GPU Chart Axes - Chỉ cấu hình trục X, để XAML xử lý trục Y
             GpuChart.AxisX.Add(new Axis
             {
                 ShowLabels = false,
             });
 
-            GpuChart.AxisY.Add(new Axis
-            {
-                LabelFormatter = value => $"{value:F0}%",
-                MinValue = 0,
-                MaxValue = 100
-            });
+            // Không thêm AxisY ở đây - để XAML xử lý
 
+            // Disk Chart Axes - Chỉ cấu hình trục X, để XAML xử lý trục Y
             DiskChart.AxisX.Add(new Axis
             {
                 ShowLabels = false,
             });
 
-            DiskChart.AxisY.Add(new Axis
-            {
-                LabelFormatter = value => $"{value:F0}%",
-                MinValue = 0,
-                MaxValue = 100
-            });
+            // Không thêm AxisY ở đây - để XAML xử lý
         }
 
         public void UpdateCharts(float cpuUsage, float ramUsage, float gpuUsage, float diskUsage)
         {
+            // Use the Dispatcher from any of the charts (they are UI elements)
+            var dispatcher = CpuChart.Dispatcher;
+            if (!dispatcher.CheckAccess())
+            {
+                dispatcher.Invoke(() => UpdateCharts(cpuUsage, ramUsage, gpuUsage, diskUsage));
+                return;
+            }
+
             var now = DateTime.Now;
 
             _cpuDataPoints.Add(new DataPoint(now, cpuUsage));
@@ -186,34 +178,20 @@ namespace SystemMonitor.Services
             _diskDataPoints.Add(new DataPoint(now, diskUsage));
 
             while (_cpuDataPoints.Count > _maxDataPoints)
-            {
                 _cpuDataPoints.RemoveAt(0);
-            }
-
             while (_ramDataPoints.Count > _maxDataPoints)
-            {
                 _ramDataPoints.RemoveAt(0);
-            }
-
             while (_gpuDataPoints.Count > _maxDataPoints)
-            {
                 _gpuDataPoints.RemoveAt(0);
-            }
-
             while (_diskDataPoints.Count > _maxDataPoints)
-            {
                 _diskDataPoints.RemoveAt(0);
-            }
 
             if (CpuLoad != null)
                 CpuLoad.Text = $"CPU Usage: {cpuUsage:F1}%";
-
             if (RamUsage != null)
                 RamUsage.Text = $"RAM Usage: {ramUsage:F1}%";
-
             if (GpuLoad != null)
                 GpuLoad.Text = $"GPU Usage: {gpuUsage:F1}%";
-
             if (DiskActivity != null)
                 DiskActivity.Text = $"Disk Activity: {diskUsage:F1}%";
 
@@ -228,24 +206,13 @@ namespace SystemMonitor.Services
             diskValues.Clear();
 
             foreach (var point in _cpuDataPoints)
-            {
                 cpuValues.Add(point);
-            }
-
             foreach (var point in _ramDataPoints)
-            {
                 ramValues.Add(point);
-            }
-
             foreach (var point in _gpuDataPoints)
-            {
                 gpuValues.Add(point);
-            }
-
             foreach (var point in _diskDataPoints)
-            {
                 diskValues.Add(point);
-            }
 
             if (_cpuDataPoints.Any())
             {
@@ -254,13 +221,10 @@ namespace SystemMonitor.Services
 
                 CpuChart.AxisX[0].MinValue = oldestPoint.Ticks;
                 CpuChart.AxisX[0].MaxValue = newestPoint.Ticks;
-
                 RamChart.AxisX[0].MinValue = oldestPoint.Ticks;
                 RamChart.AxisX[0].MaxValue = newestPoint.Ticks;
-
                 GpuChart.AxisX[0].MinValue = oldestPoint.Ticks;
                 GpuChart.AxisX[0].MaxValue = newestPoint.Ticks;
-
                 DiskChart.AxisX[0].MinValue = oldestPoint.Ticks;
                 DiskChart.AxisX[0].MaxValue = newestPoint.Ticks;
             }
@@ -268,24 +232,29 @@ namespace SystemMonitor.Services
 
         public void UpdateDvfsInfo()
         {
+            var dispatcher = CurrentMinCpuFreq?.Dispatcher ?? CurrentMaxCpuFreq?.Dispatcher;
+            if (dispatcher != null && !dispatcher.CheckAccess())
+            {
+                dispatcher.Invoke(UpdateDvfsInfo);
+                return;
+            }
+
             try
             {
                 if (_powerManagementService != null)
                 {
                     if (CurrentMinCpuFreq != null)
-                        CurrentMinCpuFreq.Text = $"Tần số tối thiểu hiện tại: {_powerManagementService.savedMinFrequency}%";
-
+                        CurrentMinCpuFreq.Text = $"Current minimum frequency: {_powerManagementService.savedMinFrequency}%";
                     if (CurrentMaxCpuFreq != null)
-                        CurrentMaxCpuFreq.Text = $"Tần số tối đa hiện tại: {_powerManagementService.savedMaxFrequency}%";
+                        CurrentMaxCpuFreq.Text = $"Current maximum frequency: {_powerManagementService.savedMaxFrequency}%";
                 }
             }
             catch
             {
                 if (CurrentMinCpuFreq != null)
-                    CurrentMinCpuFreq.Text = "Tần số tối thiểu hiện tại: Lỗi khi hiển thị";
-
+                    CurrentMinCpuFreq.Text = "Current minimum frequency: Display error";
                 if (CurrentMaxCpuFreq != null)
-                    CurrentMaxCpuFreq.Text = "Tần số tối đa hiện tại: Lỗi khi hiển thị";
+                    CurrentMaxCpuFreq.Text = "Current maximum frequency: Display error";
             }
         }
     }

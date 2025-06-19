@@ -1,0 +1,18 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="SystemMonitor.Properties" GeneratedClassName="Settings">
+	<Profiles />
+	<Settings>
+		<Setting Name="MinimizeOnStart" Type="System.Boolean" Scope="User">
+			<Value Profile="(Default)">False</Value>
+		</Setting>
+		<Setting Name="CpuWarningThreshold" Type="System.Single" Scope="User">
+			<Value Profile="(Default)">85</Value>
+		</Setting>
+		<Setting Name="RamWarningThreshold" Type="System.Single" Scope="User">
+			<Value Profile="(Default)">90</Value>
+		</Setting>
+		<Setting Name="GpuWarningThreshold" Type="System.Single" Scope="User">
+			<Value Profile="(Default)">85</Value>
+		</Setting>
+	</Settings>
+</SettingsFile>

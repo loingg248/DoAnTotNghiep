@@ -313,7 +313,14 @@ namespace SystemMonitor.Services
                 }
             }
 
-            DataUpdated?.Invoke(this, systemInfo);
+            if (App.Current?.Dispatcher.CheckAccess() == true)
+            {
+                DataUpdated?.Invoke(this, systemInfo);
+            }
+            else
+            {
+                App.Current?.Dispatcher.Invoke(() => DataUpdated?.Invoke(this, systemInfo));
+            }
         }
 
         public float UpdateCpuInfo(IHardware hardware, SystemInfoEventArgs systemInfo)
