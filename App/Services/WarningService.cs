@@ -9,6 +9,8 @@ namespace SystemMonitor.Services
     {
         // Thêm event cho background mode
         public event EventHandler<string> WarningTriggered;
+        public event Action<List<SolutionRecommendation>> SolutionsUpdated;
+        public event Action<bool> SolutionsVisibilityChanged;
 
         // Existing properties...
         public float CpuWarningThreshold { get; set; } = 85f;
@@ -40,6 +42,245 @@ namespace SystemMonitor.Services
         public void SetBackgroundMode(bool isBackground)
         {
             IsBackgroundMode = isBackground;
+        }
+
+        public class SolutionRecommendation
+        {
+            public string Icon { get; set; }
+            public string Title { get; set; }
+            public string Description { get; set; }
+            public string Action { get; set; }
+            public string ActionType { get; set; } 
+            public string ActionData { get; set; }
+        }
+
+        // Thêm method mới để tạo giải pháp cụ thể
+        private List<SolutionRecommendation> GetSpecificSolutions(List<string> warnings)
+        {
+            var solutions = new List<SolutionRecommendation>();
+
+            foreach (var warning in warnings)
+            {
+                if (warning.Contains("CPU:"))
+                {
+                    solutions.AddRange(GetCPUSolutions());
+                }
+                else if (warning.Contains("CPU Temp:"))
+                {
+                    solutions.AddRange(GetCPUTempSolutions());
+                }
+                else if (warning.Contains("RAM:"))
+                {
+                    solutions.AddRange(GetRAMSolutions());
+                }
+                else if (warning.Contains("GPU:"))
+                {
+                    solutions.AddRange(GetGPUSolutions());
+                }
+                else if (warning.Contains("GPU Temp:"))
+                {
+                    solutions.AddRange(GetGPUTempSolutions());
+                }
+                else if (warning.Contains("Disk:"))
+                {
+                    solutions.AddRange(GetDiskSolutions());
+                }
+            }
+
+            return solutions.Distinct().ToList();
+        }
+
+        private List<SolutionRecommendation> GetCPUSolutions()
+        {
+            return new List<SolutionRecommendation>
+    {
+        new() {
+            Icon = "⚡",
+            Title = "Chuyển Power Plan",
+            Description = "Chuyển sang chế độ tiết kiệm năng lượng",
+            Action = "Vào tab Power Settings → Chọn Power Saver hoặc Balanced"
+        },
+        new() {
+            Icon = "🔧",
+            Title = "Giảm CPU Frequency",
+            Description = "Hạ tốc độ CPU để giảm tải",
+            Action = "Tab Power Settings → Giảm Max CPU Frequency xuống 70-80%"
+        },
+        new() {
+            Icon = "🤖",
+            Title = "Bật Smart Mode",
+            Description = "Để hệ thống tự động điều chỉnh",
+            Action = "Tab Power Settings → Enable Smart Mode"
+        },
+        new() {
+            Icon = "🔄",
+            Title = "Quản lý Process",
+            Description = "Kiểm tra và đóng process tốn CPU",
+            Action = "Tab Process Monitor → Tìm process CPU cao → End Process"
+        }
+    };
+        }
+
+        private List<SolutionRecommendation> GetCPUTempSolutions()
+        {
+            return new List<SolutionRecommendation>
+    {
+        new() {
+            Icon = "❄️",
+            Title = "Giảm CPU Performance",
+            Description = "Hạ Max CPU Frequency để giảm nhiệt",
+            Action = "Tab Power Settings → Set Max CPU Frequency = 60-70%"
+        },
+        new() {
+            Icon = "🔋",
+            Title = "Power Saver Mode",
+            Description = "Chuyển sang chế độ tiết kiệm năng lượng",
+            Action = "Tab Power Settings → Chọn Power Saver Plan"
+        },
+        new() {
+            Icon = "🌡️",
+            Title = "Kiểm tra tản nhiệt",
+            Description = "Vệ sinh quạt CPU và tản nhiệt",
+            Action = "Tắt máy → Vệ sinh quạt → Thay keo tản nhiệt"
+        }
+    };
+        }
+
+        private List<SolutionRecommendation> GetRAMSolutions()
+        {
+            return new List<SolutionRecommendation>
+    {
+        new() {
+            Icon = "🔄",
+            Title = "Tìm Process tốn RAM",
+            Description = "Kiểm tra process sử dụng RAM cao",
+            Action = "Tab Process Monitor → Sắp xếp theo Memory → End process không cần thiết"
+        },
+        new() {
+            Icon = "⚠️",
+            Title = "Giới hạn tài nguyên",
+            Description = "Đặt giới hạn RAM cho process",
+            Action = "Process Monitor → Right click process → Set Resource Limit"
+        },
+        new() {
+            Icon = "🗑️",
+            Title = "Dọn dẹp hệ thống",
+            Description = "Giải phóng bộ nhớ không sử dụng",
+            Action = "Chạy Disk Cleanup → Clear Temp files → Restart browser"
+        }
+    };
+        }
+
+        private List<SolutionRecommendation> GetGPUSolutions()
+        {
+            return new List<SolutionRecommendation>
+    {
+        new() {
+            Icon = "🎮",
+            Title = "Tối ưu Power Plan",
+            Description = "Chuyển sang Balanced hoặc Power Saver",
+            Action = "Tab Power Settings → Chọn Power Plan phù hợp"
+        },
+        new() {
+            Icon = "🔄",
+            Title = "Kiểm tra Process GPU",
+            Description = "Tìm ứng dụng đang sử dụng GPU cao",
+            Action = "Tab Process Monitor → Tìm process graphics-intensive → Đóng nếu không cần"
+        },
+        new() {
+            Icon = "⚡",
+            Title = "Giảm hiệu năng",
+            Description = "Hạ settings đồ họa trong game/app",
+            Action = "Giảm resolution, texture quality, disable effects"
+        }
+    };
+        }
+
+        private List<SolutionRecommendation> GetGPUTempSolutions()
+        {
+            return new List<SolutionRecommendation>
+    {
+        new() {
+            Icon = "🔋",
+            Title = "Power Management",
+            Description = "Giảm power limit của GPU",
+            Action = "Tab Power Settings → Chọn Power Saver để giảm GPU load"
+        },
+        new() {
+            Icon = "🌪️",
+            Title = "Tăng tốc quạt",
+            Description = "Tăng fan curve GPU",
+            Action = "MSI Afterburner → Tăng fan speed → Custom fan curve"
+        },
+        new() {
+            Icon = "❄️",
+            Title = "Vệ sinh làm mát",
+            Description = "Thổi bụi GPU và case",
+            Action = "Tắt máy → Compressed air → Vệ sinh GPU cooler"
+        }
+    };
+        }
+
+        private List<SolutionRecommendation> GetDiskSolutions()
+        {
+            return new List<SolutionRecommendation>
+    {
+        new() {
+            Icon = "🔄",
+            Title = "Kiểm tra Disk Activity",
+            Description = "Tìm process đang sử dụng disk cao",
+            Action = "Tab Process Monitor → Tìm process I/O intensive → Tạm dừng hoặc đóng"
+        },
+        new() {
+            Icon = "⚠️",
+            Title = "Giới hạn I/O",
+            Description = "Đặt giới hạn disk usage cho process",
+            Action = "Process Monitor → Right click → Set Resource Limit cho disk usage"
+        },
+        new() {
+            Icon = "⏸️",
+            Title = "Tạm dừng backup/scan",
+            Description = "Dừng antivirus hoặc backup đang chạy",
+            Action = "Tạm dừng Windows Defender scan, OneDrive sync, backup software"
+        },
+        new() {
+            Icon = "💾",
+            Title = "Disk Sleep Settings",
+            Description = "Tối ưu disk power management",
+            Action = "Tab Power Settings → Điều chỉnh sleep settings cho disk"
+        }
+    };
+        }
+
+        private List<SolutionRecommendation> GetCPUSolutionsWithActions()
+        {
+            return new List<SolutionRecommendation>
+    {
+        new() {
+            Icon = "🤖",
+            Title = "Bật Smart Mode",
+            Description = "Tự động điều chỉnh CPU theo tải",
+            Action = "Nhấn Enable Smart Mode trong tab Power Settings",
+            ActionType = "TAB_SWITCH",
+            ActionData = "PowerSettings|EnableSmartMode"
+        },
+        new() {
+            Icon = "🔧",
+            Title = "Giảm Max CPU Frequency",
+            Description = "Hạ tốc độ CPU xuống 70%",
+            Action = "Set Max CPU Frequency = 70% trong Power Settings",
+            ActionType = "TAB_SWITCH",
+            ActionData = "PowerSettings|SetMaxCPU|70"
+        },
+        new() {
+            Icon = "🔄",
+            Title = "Đóng Process tốn CPU",
+            Description = "Tìm và đóng process CPU cao nhất",
+            Action = "Chuyển sang Process Monitor để xem chi tiết",
+            ActionType = "TAB_SWITCH",
+            ActionData = "ProcessMonitor|SortByCPU"
+        }
+    };
         }
 
         public void CheckSystemOverload(SystemInfoEventArgs systemInfo)
@@ -120,7 +361,7 @@ namespace SystemMonitor.Services
         }
 
         // Existing methods remain the same...
-        private void UpdateWarningUI(bool isOverloaded, System.Collections.Generic.List<string> warnings)
+        private void UpdateWarningUI(bool isOverloaded, List<string> warnings)
         {
             if (_warningStatus == null || _warningBorder == null) return;
 
@@ -135,13 +376,10 @@ namespace SystemMonitor.Services
                 _warningBorder.BorderThickness = new Thickness(2);
                 _warningBorder.Visibility = Visibility.Visible;
 
-                string tooltipText = "🚨 WARNING DETAILS:\n\n";
-                foreach (var warning in warnings)
-                {
-                    tooltipText += "• " + warning + "\n";
-                }
-                tooltipText += "\n💡 Recommendation: Check and reduce load on overloaded components.";
-                _warningBorder.ToolTip = tooltipText;
+                // Trigger event thay vì truy cập trực tiếp MainWindow
+                var solutions = GetSpecificSolutions(warnings);
+                SolutionsUpdated?.Invoke(solutions);
+                SolutionsVisibilityChanged?.Invoke(true);
             }
             else
             {
@@ -151,8 +389,9 @@ namespace SystemMonitor.Services
                     _warningStatus.Text = "✅ System operating normally";
                     _warningBorder.Background = new SolidColorBrush(Color.FromRgb(212, 237, 218));
                     _warningBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(25, 135, 84));
-                    _warningBorder.BorderThickness = new Thickness(1);
-                    _warningBorder.ToolTip = "All system parameters are at normal levels";
+
+                    // Trigger event để ẩn solutions
+                    SolutionsVisibilityChanged?.Invoke(false);
                 }
                 else
                 {
@@ -166,25 +405,31 @@ namespace SystemMonitor.Services
             return DateTime.Now - _lastWarningTime > _warningCooldown;
         }
 
-        private void ShowWarningPopup(System.Collections.Generic.List<string> warnings)
+        private void ShowWarningPopup(List<string> warnings)
         {
             _lastWarningTime = DateTime.Now;
+            var solutions = GetSpecificSolutions(warnings);
 
-            string message = "⚠️ SYSTEM WARNING!\n\n";
-            message += "🔍 DETECTED ISSUES:\n";
+            string message = "⚠️ HỆ THỐNG CẢNH BÁO!\n\n";
+            message += "🔍 VẤN ĐỀ PHÁT HIỆN:\n";
 
             foreach (var warning in warnings)
             {
                 message += $"• {warning}\n";
             }
 
-            message += "\n💡 RECOMMENDATIONS:\n";
-            message += "• Close unnecessary applications\n";
-            message += "• Check system cooling\n";
-            message += "• Reduce CPU/GPU workload intensity\n";
-            message += "• Clean up RAM and hard drive if needed";
+            message += "\n💡 GIẢI PHÁP ĐỀ XUẤT:\n";
 
-            MessageBox.Show(message, "System Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+            foreach (var solution in solutions.Take(6)) // Giới hạn 6 giải pháp
+            {
+                message += $"{solution.Icon} {solution.Title}: {solution.Description}\n";
+                message += $"   → {solution.Action}\n\n";
+            }
+
+            message += "⏰ Cảnh báo sẽ lặp lại sau 60 giây nếu vẫn có vấn đề.";
+
+            MessageBox.Show(message, "System Warning - Smart Solutions",
+                           MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
         public void UpdateThresholds(float cpuThreshold, float cpuTempThreshold, float ramThreshold,

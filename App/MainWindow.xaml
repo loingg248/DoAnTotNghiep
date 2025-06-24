@@ -6,7 +6,8 @@
         xmlns:tb="http://www.hardcodet.net/taskbar"
         Title="System Monitor" Height="780" Width="1000"
         StateChanged="MainWindow_StateChanged" 
-        Background="#FFF0F2F5" FontFamily="Segoe UI" FontSize="13">
+        Background="#FFF0F2F5" FontFamily="Segoe UI" FontSize="13"
+        >
 
     <Window.Resources>
         <tb:TaskbarIcon x:Key="NotifyIcon"
@@ -112,6 +113,32 @@
             <Setter Property="Hoverable" Value="True"/>
             <Setter Property="AnimationsSpeed" Value="00:00:00.8"/>
             <Setter Property="Background" Value="#FAFBFC"/>
+        </Style>
+
+        <Style x:Key="SolutionButtonStyle" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            CornerRadius="4"
+                            BorderThickness="1"
+                            Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
     </Window.Resources>
@@ -472,7 +499,7 @@
                             <TextBlock Text="⚠️ System Alert Settings" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
 
                             <TextBlock Text="Adjust warning thresholds for system components:" 
-                           Margin="0,0,0,15" TextWrapping="Wrap"/>
+               Margin="0,0,0,15" TextWrapping="Wrap"/>
 
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -535,17 +562,83 @@
                             </Grid>
 
                             <Button Content="💾 Save Settings" 
-                        Click="SaveWarningSettings_Click" 
-                        HorizontalAlignment="Center" 
-                        Margin="0,20,0,0" 
-                        Width="150"/>
+            Click="SaveWarningSettings_Click" 
+            HorizontalAlignment="Center" 
+            Margin="0,20,0,0" 
+            Width="150"/>
 
                             <Separator Margin="0,20"/>
 
-                            <TextBlock Text="📋 Warning Status:" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                            <TextBlock Text="🛠️ Quick Solutions:" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+                            <ScrollViewer x:Name="SolutionsPanel" MaxHeight="200" VerticalScrollBarVisibility="Auto" 
+              Visibility="Collapsed">
+                                <ItemsControl x:Name="SolutionsList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#f8f9fa" BorderBrush="#dee2e6" BorderThickness="1" 
+                    CornerRadius="8" Margin="0,8" Padding="15">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <!-- Solution Content -->
+                                                    <StackPanel Grid.Column="0">
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                            <TextBlock Text="{Binding Icon}" FontSize="18" Margin="0,0,10,0"/>
+                                                            <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14" 
+                                       VerticalAlignment="Center" Foreground="#1976D2"/>
+                                                        </StackPanel>
+
+                                                        <TextBlock Text="{Binding Description}" TextWrapping="Wrap" 
+                                   Margin="0,0,0,8" FontSize="13"/>
+
+                                                        <TextBlock Text="{Binding Action}" Foreground="#666" 
+                                   FontSize="12" TextWrapping="Wrap" FontStyle="Italic"/>
+                                                    </StackPanel>
+
+                                                    <!-- Action Buttons -->
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0">
+                                                        <!-- Quick Action Button -->
+                                                        <Button Content="🚀 Thực hiện" 
+                                Background="#4CAF50" 
+                                Foreground="White"
+                                BorderBrush="#4CAF50"
+                                Padding="12,6" 
+                                Margin="0,0,0,5"
+                                FontSize="11"
+                                FontWeight="SemiBold"
+                                Click="QuickAction_Click"
+                                Tag="{Binding}"
+                                ToolTip="Click để thực hiện giải pháp này"/>
+
+                                                        <!-- Guide Button -->
+                                                        <Button Content="📖 Hướng dẫn" 
+                                Background="#2196F3" 
+                                Foreground="White"
+                                BorderBrush="#2196F3"
+                                Padding="12,6"
+                                FontSize="11"
+                                FontWeight="SemiBold"
+                                Click="ShowGuide_Click"
+                                Tag="{Binding}"
+                                ToolTip="Xem hướng dẫn chi tiết"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <Button x:Name="ShowSolutionsButton" Content="💡 Show Solutions" 
+        Click="ShowSolutions_Click" HorizontalAlignment="Center" 
+        Margin="0,10,0,0" Width="150" Visibility="Collapsed"/>
                             <TextBlock x:Name="WarningSettingsStatus" 
-                           Text="Warning is active with default threshold" 
-                           Foreground="Green"/>
+               Text="Warning is active with default threshold" 
+               Foreground="Green"/>
                         </StackPanel>
                     </Border>
                 </ScrollViewer>
