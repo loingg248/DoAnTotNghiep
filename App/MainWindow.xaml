@@ -4,7 +4,7 @@
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:lv="clr-namespace:LiveCharts;assembly=LiveCharts"
         xmlns:tb="http://www.hardcodet.net/taskbar"
-        Title="System Monitor" Height="780" Width="1000"
+        Title="Giám sát Hệ thống" Height="780" Width="1000"
         Closing="MainWindow_Closing"
         Background="#FFF0F2F5" FontFamily="Segoe UI" FontSize="13"
         >
@@ -12,24 +12,24 @@
     <Window.Resources>
         <tb:TaskbarIcon x:Key="NotifyIcon"
                         IconSource="/icon.ico"
-                        ToolTipText="System Monitor - Running in background"
+                        ToolTipText="Giám sát Hệ thống - Đang chạy nền"
                         Visibility="Collapsed"
                         DoubleClickCommand="{Binding ShowWindowCommand}"
                         MenuActivation="RightClick">
             <tb:TaskbarIcon.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Show Monitor" Click="ShowMonitor_Click">
+                    <MenuItem Header="Hiển thị Giám sát" Click="ShowMonitor_Click">
                         <MenuItem.Icon>
                             <TextBlock Text="🖥️" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Alert Settings" Click="ShowAlertSettings_Click">
+                    <MenuItem Header="Cài đặt Cảnh báo" Click="ShowAlertSettings_Click">
                         <MenuItem.Icon>
                             <TextBlock Text="⚠️" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <Separator />
-                    <MenuItem Header="Exit" Click="ExitApplication_Click">
+                    <MenuItem Header="Thoát" Click="ExitApplication_Click">
                         <MenuItem.Icon>
                             <TextBlock Text="❌" />
                         </MenuItem.Icon>
@@ -152,7 +152,7 @@
         Visibility="Collapsed">
             <StackPanel Orientation="Horizontal">
                 <TextBlock x:Name="WarningStatus" 
-                   Text="System running normally" 
+                   Text="Hệ thống đang hoạt động bình thường" 
                    FontWeight="SemiBold" 
                    VerticalAlignment="Center"/>
             </StackPanel>
@@ -160,14 +160,14 @@
 
         <!-- Tab Control for different pages -->
         <TabControl Margin="10" BorderThickness="0" Background="Transparent">
-            <TabItem Header="🖥️ System Info" Style="{StaticResource TabButtonStyle}">
+            <TabItem Header="🖥️ Thông tin Hệ thống" Style="{StaticResource TabButtonStyle}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <!-- Control buttons moved here -->
                         <StackPanel Orientation="Horizontal" Margin="15" HorizontalAlignment="Left">
-                            <Button Content="🔄 Refresh" Width="110" Click="RefreshButton_Click"/>
-                            <Button Content="▶ Start Monitor" Width="140" Click="StartMonitorButton_Click"/>
-                            <Button Content="⏹ Stop Monitor" Width="140" Click="StopMonitorButton_Click"/>
+                            <Button Content="🔄 Làm mới" Width="110" Click="RefreshButton_Click"/>
+                            <Button Content="▶ Bắt đầu Giám sát" Width="140" Click="StartMonitorButton_Click"/>
+                            <Button Content="⏹ Dừng Giám sát" Width="140" Click="StopMonitorButton_Click"/>
                         </StackPanel>
 
                         <Grid>
@@ -184,11 +184,11 @@
                             <!-- CPU Card -->
                             <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource CardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="🖥 CPU" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
-                                    <TextBlock x:Name="CpuName" Text="CPU Name: " Margin="0,3"/>
-                                    <TextBlock x:Name="CpuTemp" Text="CPU Temperature: " Margin="0,3"/>
-                                    <TextBlock x:Name="CpuLoad" Text="CPU Usage: " Margin="0,3"/>
-                                    <TextBlock x:Name="CpuClock" Text="CPU Clock: " Margin="0,3"/>
+                                    <TextBlock Text="🖥 Bộ xử lý" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <TextBlock x:Name="CpuName" Text="Tên CPU: " Margin="0,3"/>
+                                    <TextBlock x:Name="CpuTemp" Text="Nhiệt độ CPU: " Margin="0,3"/>
+                                    <TextBlock x:Name="CpuLoad" Text="Sử dụng CPU: " Margin="0,3"/>
+                                    <TextBlock x:Name="CpuClock" Text="Tần số CPU: " Margin="0,3"/>
 
                                     <!-- CPU Chart -->
                                     <lvc:CartesianChart x:Name="CpuChart" Style="{StaticResource ChartCardStyle}">
@@ -220,11 +220,11 @@
                             <!-- RAM Card -->
                             <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource CardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="💾 Memory" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
-                                    <TextBlock x:Name="RamTotal" Text="Total RAM: " Margin="0,3"/>
-                                    <TextBlock x:Name="RamUsed" Text="Used RAM: " Margin="0,3"/>
-                                    <TextBlock x:Name="RamAvailable" Text="Available RAM: " Margin="0,3"/>
-                                    <TextBlock x:Name="RamUsage" Text="RAM Usage: " Margin="0,3"/>
+                                    <TextBlock Text="💾 Bộ nhớ" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <TextBlock x:Name="RamTotal" Text="Tổng RAM: " Margin="0,3"/>
+                                    <TextBlock x:Name="RamUsed" Text="RAM đã sử dụng: " Margin="0,3"/>
+                                    <TextBlock x:Name="RamAvailable" Text="RAM còn lại: " Margin="0,3"/>
+                                    <TextBlock x:Name="RamUsage" Text="Sử dụng RAM: " Margin="0,3"/>
 
                                     <!-- RAM Chart -->
                                     <lvc:CartesianChart x:Name="RamChart" Style="{StaticResource ChartCardStyle}">
@@ -256,11 +256,11 @@
                             <!-- GPU Card -->
                             <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource CardStyle}">
                                 <StackPanel x:Name="GpuContainer" Grid.Row="2" Grid.Column="1" Margin="10,10,10,10">
-                                    <TextBlock Text="🎮 GPU" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
-                                    <TextBlock x:Name="GpuName" Text="GPU Name: " Margin="0,3"/>
-                                    <TextBlock x:Name="GpuTemp" Text="GPU Temperature: " Margin="0,3"/>
-                                    <TextBlock x:Name="GpuLoad" Text="GPU Usage: " Margin="0,3"/>
-                                    <TextBlock x:Name="GpuMemory" Text="GPU Memory: " Margin="0,3"/>
+                                    <TextBlock Text="🎮 Card đồ họa" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <TextBlock x:Name="GpuName" Text="Tên GPU: " Margin="0,3"/>
+                                    <TextBlock x:Name="GpuTemp" Text="Nhiệt độ GPU: " Margin="0,3"/>
+                                    <TextBlock x:Name="GpuLoad" Text="Sử dụng GPU: " Margin="0,3"/>
+                                    <TextBlock x:Name="GpuMemory" Text="Bộ nhớ GPU: " Margin="0,3"/>
 
                                     <!-- GPU Chart -->
                                     <lvc:CartesianChart x:Name="GpuChart" Style="{StaticResource ChartCardStyle}">
@@ -292,11 +292,11 @@
                             <!-- Disk Card -->
                             <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource CardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="💽 Disk" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
-                                    <TextBlock x:Name="DiskName" Text="Disk Name: " Margin="0,3"/>
-                                    <TextBlock x:Name="DiskTemp" Text="Disk Temperature: " Margin="0,3"/>
-                                    <TextBlock x:Name="DiskActivity" Text="Disk Activity: " Margin="0,3"/>
-                                    <TextBlock x:Name="DiskSpace" Text="Disk Space: " Margin="0,3"/>
+                                    <TextBlock Text="💽 Ổ cứng" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <TextBlock x:Name="DiskName" Text="Tên ổ cứng: " Margin="0,3"/>
+                                    <TextBlock x:Name="DiskTemp" Text="Nhiệt độ ổ cứng: " Margin="0,3"/>
+                                    <TextBlock x:Name="DiskActivity" Text="Hoạt động ổ cứng: " Margin="0,3"/>
+                                    <TextBlock x:Name="DiskSpace" Text="Dung lượng ổ cứng: " Margin="0,3"/>
 
                                     <!-- Disk Chart -->
                                     <lvc:CartesianChart x:Name="DiskChart" Style="{StaticResource ChartCardStyle}">
@@ -329,15 +329,15 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="⚙️ Power Settings" Style="{StaticResource TabButtonStyle}">
+            <TabItem Header="⚙️ Cài đặt Nguồn" Style="{StaticResource TabButtonStyle}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="20">
                         <!-- Header -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,25">
                             <TextBlock Text="⚙️" FontSize="28" VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <StackPanel>
-                                <TextBlock Text="Power Management" FontSize="22" FontWeight="Bold" Foreground="#1976D2"/>
-                                <TextBlock Text="Optimize your system power consumption and performance" 
+                                <TextBlock Text="Quản lý Nguồn điện" FontSize="22" FontWeight="Bold" Foreground="#1976D2"/>
+                                <TextBlock Text="Tối ưu hóa mức tiêu thụ điện năng và hiệu suất hệ thống" 
                                FontSize="13" Foreground="#666" Margin="0,2,0,0"/>
                             </StackPanel>
                         </StackPanel>
@@ -357,14 +357,14 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
                                         <TextBlock Text="🔋" FontSize="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock Text="Power Plan" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Chế độ Nguồn" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                     </StackPanel>
 
                                     <ComboBox x:Name="PowerPlanComboBox" 
                                   SelectionChanged="PowerPlanComboBox_SelectionChanged"
                                   Margin="0,0,0,10"/>
 
-                                    <TextBlock Text="Select the power plan that best fits your usage pattern" 
+                                    <TextBlock Text="Chọn chế độ nguồn phù hợp nhất với cách sử dụng của bạn" 
                                    FontSize="12" Foreground="#666" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
@@ -374,7 +374,7 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
                                         <TextBlock Text="⚡" FontSize="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock Text="CPU Frequency" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Tần số CPU" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                     </StackPanel>
 
                                     <!-- Current Status -->
@@ -385,13 +385,13 @@
                                         </Grid.ColumnDefinitions>
 
                                         <StackPanel Grid.Column="0">
-                                            <TextBlock Text="Current Min:" FontSize="11" Foreground="#666"/>
-                                            <TextBlock x:Name="CurrentMinCpuFreq" Text="N/A" FontWeight="SemiBold" FontSize="13"/>
+                                            <TextBlock Text="Tối thiểu hiện tại:" FontSize="11" Foreground="#666"/>
+                                            <TextBlock x:Name="CurrentMinCpuFreq" Text="Không xác định" FontWeight="SemiBold" FontSize="13"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="1">
-                                            <TextBlock Text="Current Max:" FontSize="11" Foreground="#666"/>
-                                            <TextBlock x:Name="CurrentMaxCpuFreq" Text="N/A" FontWeight="SemiBold" FontSize="13"/>
+                                            <TextBlock Text="Tối đa hiện tại:" FontSize="11" Foreground="#666"/>
+                                            <TextBlock x:Name="CurrentMaxCpuFreq" Text="Không xác định" FontWeight="SemiBold" FontSize="13"/>
                                         </StackPanel>
                                     </Grid>
 
@@ -407,13 +407,13 @@
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Min:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Tối thiểu:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBox Grid.Row="0" Grid.Column="1" x:Name="MinFrequencyTextBox" Text="25" Margin="0,0,8,5"/>
-                                        <Button Grid.Row="0" Grid.Column="2" Content="Set" Click="SetMinCpuFrequency_Click" Width="50" Margin="0,0,0,5"/>
+                                        <Button Grid.Row="0" Grid.Column="2" Content="Áp dụng" Click="SetMinCpuFrequency_Click" Width="60" Margin="0,0,0,5"/>
 
-                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Max:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Tối đa:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBox Grid.Row="1" Grid.Column="1" x:Name="MaxFrequencyTextBox" Text="100" Margin="0,0,8,0"/>
-                                        <Button Grid.Row="1" Grid.Column="2" Content="Set" Click="SetMaxCpuFrequency_Click" Width="50"/>
+                                        <Button Grid.Row="1" Grid.Column="2" Content="Áp dụng" Click="SetMaxCpuFrequency_Click" Width="60"/>
                                     </Grid>
                                 </StackPanel>
                             </Border>
@@ -423,26 +423,26 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
                                         <TextBlock Text="🤖" FontSize="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock Text="Smart Control" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Điều khiển Thông minh" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                     </StackPanel>
 
                                     <TextBlock x:Name="AutoAdjustStatus" 
-                                   Text="Automatic adjustment is disabled" 
+                                   Text="Điều chỉnh tự động đã tắt" 
                                    FontSize="12" Foreground="#666" Margin="0,0,0,12"/>
 
                                     <Button x:Name="AutoAdjustCpuButton" 
-                                Content="🚀 Enable Smart Mode" 
+                                Content="🚀 Bật Chế độ Thông minh" 
                                 Click="AutoAdjustCpuButton_Click" 
                                 HorizontalAlignment="Stretch"
                                 Margin="0,0,0,10"/>
 
                                     <Border Background="#F8F9FA" CornerRadius="6" Padding="10">
                                         <StackPanel>
-                                            <TextBlock Text="Smart Mode automatically adjusts CPU frequency based on usage:" 
+                                            <TextBlock Text="Chế độ Thông minh tự động điều chỉnh tần số CPU dựa trên mức sử dụng:" 
                                            FontSize="11" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                                            <TextBlock Text="• Low usage (0-30%): Power saving mode" FontSize="10" Margin="0,2"/>
-                                            <TextBlock Text="• Medium usage (30-70%): Balanced mode" FontSize="10" Margin="0,2"/>
-                                            <TextBlock Text="• High usage (70%+): Performance mode" FontSize="10" Margin="0,2"/>
+                                            <TextBlock Text="• Sử dụng thấp (0-30%): Chế độ tiết kiệm điện" FontSize="10" Margin="0,2"/>
+                                            <TextBlock Text="• Sử dụng vừa (30-70%): Chế độ cân bằng" FontSize="10" Margin="0,2"/>
+                                            <TextBlock Text="• Sử dụng cao (70%+): Chế độ hiệu suất" FontSize="10" Margin="0,2"/>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -453,7 +453,7 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
                                         <TextBlock Text="💤" FontSize="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock Text="Sleep and Display" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Ngủ và Hiển thị" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                     </StackPanel>
 
                                     <Grid>
@@ -470,19 +470,19 @@
                                         <!-- Screen Off -->
                                         <StackPanel Grid.Row="0" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,0,0,10">
                                             <TextBlock Text="📺" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                            <TextBlock Text="Turn off display after" VerticalAlignment="Center" Width="120"/>
+                                            <TextBlock Text="Tắt màn hình sau" VerticalAlignment="Center" Width="120"/>
                                             <TextBox x:Name="ScreenOffMinutesTextBox" Text="10" Width="40" Margin="5,0"/>
-                                            <TextBlock Text="min" VerticalAlignment="Center" Margin="5,0,8,0"/>
-                                            <Button Content="Apply" Click="ApplyScreenOffTime_Click" Width="60"/>
+                                            <TextBlock Text="phút" VerticalAlignment="Center" Margin="5,0,8,0"/>
+                                            <Button Content="Áp dụng" Click="ApplyScreenOffTime_Click" Width="60"/>
                                         </StackPanel>
 
                                         <!-- Sleep -->
                                         <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal">
                                             <TextBlock Text="😴" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                            <TextBlock Text="Sleep after" VerticalAlignment="Center" Width="120"/>
+                                            <TextBlock Text="Ngủ sau" VerticalAlignment="Center" Width="120"/>
                                             <TextBox x:Name="SleepMinutesTextBox" Text="30" Width="40" Margin="5,0"/>
-                                            <TextBlock Text="min" VerticalAlignment="Center" Margin="5,0,8,0"/>
-                                            <Button Content="Apply" Click="ApplySleepTime_Click" Width="60"/>
+                                            <TextBlock Text="phút" VerticalAlignment="Center" Margin="5,0,8,0"/>
+                                            <Button Content="Áp dụng" Click="ApplySleepTime_Click" Width="60"/>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
@@ -776,22 +776,22 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="🔄 Process Monitor" Style="{StaticResource TabButtonStyle}">
+            <TabItem Header="🔄 Giám sát tiến trình" Style="{StaticResource TabButtonStyle}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <Border Style="{StaticResource CardStyle}">
                         <StackPanel>
-                            <TextBlock Text="🔄 Process Monitor" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+                            <TextBlock Text="🔄 Giám sát tiến trình" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
 
                             <!-- Control buttons -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                                <Button Content="🔄 Refresh" Width="100" Click="RefreshProcessList_Click"/>
-                                <Button Content="▶ Start Monitor" Width="120" Click="StartProcessMonitor_Click"/>
-                                <Button Content="⏹ Stop Monitor" Width="120" Click="StopProcessMonitor_Click"/>
+                                <Button Content="🔄 Làm mới" Width="100" Click="RefreshProcessList_Click"/>
+                                <Button Content="▶ Bắt đầu giám sát" Width="120" Click="StartProcessMonitor_Click"/>
+                                <Button Content="⏹ Dừng giám sát" Width="120" Click="StopProcessMonitor_Click"/>
                             </StackPanel>
 
                             <!-- Process count -->
                             <TextBlock x:Name="ProcessCountLabel" 
-                           Text="Total processes: 0" 
+                           Text="Tổng số tiến trình: 0" 
                            FontWeight="SemiBold" 
                            Margin="0,0,0,10"/>
 
@@ -804,22 +804,22 @@
                                 <!-- Context Menu for ListView -->
                                 <ListView.ContextMenu>
                                     <ContextMenu>
-                                        <MenuItem Header="🔄 Refresh Process List" Click="RefreshProcessList_Click"/>
+                                        <MenuItem Header="🔄 Làm mới danh sách tiến trình" Click="RefreshProcessList_Click"/>
                                         <Separator/>
-                                        <MenuItem Header="⚠️ End Process" Click="EndProcess_ContextMenu_Click"/>
+                                        <MenuItem Header="⚠️ Kết thúc tiến trình" Click="EndProcess_ContextMenu_Click"/>
                                         <Separator/>
                                         <!-- Thêm các menu item mới -->
-                                        <MenuItem Header="🎛️ Set Resource Limit" Click="SetResourceLimit_ContextMenu_Click"/>
-                                        <MenuItem Header="🚫 Remove Resource Limit" Click="RemoveResourceLimit_ContextMenu_Click"/>
+                                        <MenuItem Header="🎛️ Đặt giới hạn tài nguyên" Click="SetResourceLimit_ContextMenu_Click"/>
+                                        <MenuItem Header="🚫 Xóa giới hạn tài nguyên" Click="RemoveResourceLimit_ContextMenu_Click"/>
                                         <Separator/>
-                                        <MenuItem Header="📊 View All Resource Limits" Click="ViewResourceLimits_Click"/>
+                                        <MenuItem Header="📊 Xem tất cả giới hạn tài nguyên" Click="ViewResourceLimits_Click"/>
                                     </ContextMenu>
                                 </ListView.ContextMenu>
 
                                 <ListView.View>
                                     <GridView>
                                         <!-- Icon and Process Name column combined -->
-                                        <GridViewColumn Header="Process" Width="250">
+                                        <GridViewColumn Header="Tiến trình" Width="250">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <StackPanel Orientation="Horizontal">
@@ -836,15 +836,15 @@
                                         </GridViewColumn>
 
                                         <GridViewColumn Header="ID" Width="60" DisplayMemberBinding="{Binding Id}"/>
-                                        <GridViewColumn Header="Memory (MB)" Width="120" DisplayMemberBinding="{Binding MemoryUsageText}"/>
+                                        <GridViewColumn Header="Bộ nhớ (MB)" Width="120" DisplayMemberBinding="{Binding MemoryUsageText}"/>
                                         <GridViewColumn Header="CPU (%)" Width="80" DisplayMemberBinding="{Binding CpuUsageText}"/>
-                                        <GridViewColumn Header="Status" Width="150" DisplayMemberBinding="{Binding Status}"/>
+                                        <GridViewColumn Header="Trạng thái" Width="150" DisplayMemberBinding="{Binding Status}"/>
                                         <!-- Removed "Action" column with Kill button -->
                                     </GridView>
                                 </ListView.View>
                             </ListView>
 
-                            <TextBlock Text="⚠️ Warning: Be careful when ending processes, it may affect the system!" 
+                            <TextBlock Text="⚠️ Cảnh báo: Hãy cẩn thận khi kết thúc tiến trình, điều này có thể ảnh hưởng đến hệ thống!" 
                            Foreground="Orange" 
                            FontWeight="SemiBold" 
                            Margin="0,10,0,0" 

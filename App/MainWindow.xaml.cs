@@ -54,7 +54,7 @@ namespace SystemMonitor
         {
             InitializeComponent();
             InitializeBackgroundMode();
-            
+
 
             _monitoringService = new MonitoringService();
             _powerManagementService = new PowerManagementService();
@@ -103,7 +103,7 @@ namespace SystemMonitor
 
             isInitializing = false;
 
-            // Automatically start monitoring after initialization
+            // Tự động bắt đầu theo dõi sau khi khởi tạo
             AutoStartMonitoring();
 
             _solutionsPanel = FindName("SolutionsPanel") as ScrollViewer;
@@ -118,7 +118,7 @@ namespace SystemMonitor
 
             // Tạo timer cho chế độ chạy ngầm
             _backgroundTimer = new DispatcherTimer();
-            _backgroundTimer.Interval = TimeSpan.FromSeconds(30); // 5 giây
+            _backgroundTimer.Interval = TimeSpan.FromSeconds(30); // 30 giây
             _backgroundTimer.Tick += BackgroundTimer_Tick;
         }
 
@@ -141,10 +141,10 @@ namespace SystemMonitor
 
                 // Hiển thị dialog hỏi người dùng
                 var result = MessageBox.Show(
-                    "Bạn có muốn thu nhỏ ứng dụng xuống system tray thay vì thoát không?\n\n" +
-                    "- Chọn 'Yes' để thu nhỏ xuống system tray\n" +
-                    "- Chọn 'No' để thoát ứng dụng hoàn toàn",
-                    "System Monitor",
+                    "Bạn có muốn thu nhỏ ứng dụng xuống khay hệ thống thay vì thoát không?\n\n" +
+                    "- Chọn 'Có' để thu nhỏ xuống khay hệ thống\n" +
+                    "- Chọn 'Không' để thoát ứng dụng hoàn toàn",
+                    "Giám Sát Hệ Thống",
                     MessageBoxButton.YesNoCancel,
                     MessageBoxImage.Question);
 
@@ -155,8 +155,8 @@ namespace SystemMonitor
                     _notifyIcon.Visibility = Visibility.Visible;
 
                     // Hiển thị thông báo
-                    _notifyIcon.ShowBalloonTip("System Monitor",
-                        "Application minimized to system tray. Monitoring continues in background.",
+                    _notifyIcon.ShowBalloonTip("Giám Sát Hệ Thống",
+                        "Ứng dụng đã được thu nhỏ xuống khay hệ thống. Việc giám sát tiếp tục chạy ngầm.",
                         BalloonIcon.Info);
 
                     // Chuyển sang chế độ chạy ngầm
@@ -212,7 +212,7 @@ namespace SystemMonitor
             catch (Exception ex)
             {
                 // Log error nếu cần
-                System.Diagnostics.Debug.WriteLine($"Background monitoring error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Lỗi giám sát ngầm: {ex.Message}");
             }
         }
 
@@ -221,7 +221,7 @@ namespace SystemMonitor
             // Hiển thị cảnh báo qua tray notification
             Dispatcher.Invoke(() =>
             {
-                _notifyIcon.ShowBalloonTip("⚠️ System Warning",
+                _notifyIcon.ShowBalloonTip("⚠️ Cảnh Báo Hệ Thống",
                     warningMessage, BalloonIcon.Warning);
             });
         }
@@ -234,10 +234,10 @@ namespace SystemMonitor
         private void ShowAlertSettings_Click(object sender, RoutedEventArgs e)
         {
             ShowFromTray();
-            // Chuyển đến tab Alerts
+            // Chuyển đến tab Cảnh báo
             if (sender is TabControl tabControl)
             {
-                tabControl.SelectedIndex = 2; // Index của tab Alerts
+                tabControl.SelectedIndex = 2; // Index của tab Cảnh báo
             }
         }
 
@@ -331,12 +331,12 @@ namespace SystemMonitor
                     cancellationTokenSource = new CancellationTokenSource();
                     _monitoringService.StartMonitoring(cancellationTokenSource.Token);
 
-                    // Update UI to reflect monitoring status
+                    // Cập nhật UI để phản ánh trạng thái giám sát
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error when automatically starting monitoring: {ex.Message}", "Error",
+                MessageBox.Show($"Lỗi khi tự động bắt đầu giám sát: {ex.Message}", "Lỗi",
                                MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
@@ -369,7 +369,7 @@ namespace SystemMonitor
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error getting current power plan: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Lỗi khi lấy thông tin kế hoạch nguồn hiện tại: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             return string.Empty;
         }
@@ -400,18 +400,18 @@ namespace SystemMonitor
                 _warningService.UpdateThresholds(cpuThreshold, cpuTempThreshold, ramThreshold,
                                                gpuThreshold, gpuTempThreshold, diskThreshold);
 
-                WarningSettingsStatus.Text = $"✅ Settings saved: CPU {cpuThreshold}%, RAM {ramThreshold}%, GPU {gpuThreshold}%";
+                WarningSettingsStatus.Text = $"✅ Cài đặt đã lưu: CPU {cpuThreshold}%, RAM {ramThreshold}%, GPU {gpuThreshold}%";
                 WarningSettingsStatus.Foreground = new SolidColorBrush(Colors.Green);
 
-                MessageBox.Show("Warning settings have been saved successfully!", "Success",
+                MessageBox.Show("Cài đặt cảnh báo đã được lưu thành công!", "Thành công",
                                MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                WarningSettingsStatus.Text = "❌ Error: Please enter valid numbers";
+                WarningSettingsStatus.Text = "❌ Lỗi: Vui lòng nhập số hợp lệ";
                 WarningSettingsStatus.Foreground = new SolidColorBrush(Colors.Red);
 
-                MessageBox.Show($"Error saving settings: {ex.Message}", "Error",
+                MessageBox.Show($"Lỗi khi lưu cài đặt: {ex.Message}", "Lỗi",
                                MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -429,8 +429,8 @@ namespace SystemMonitor
                 cancellationTokenSource = new CancellationTokenSource();
                 _monitoringService.StartMonitoring(cancellationTokenSource.Token);
 
-                // Update UI if needed
-                // StartMonitorButton.Content = "⏹ Stop Monitoring";
+                // Cập nhật UI nếu cần
+                // StartMonitorButton.Content = "⏹ Dừng Giám Sát";
             }
         }
 
@@ -441,8 +441,8 @@ namespace SystemMonitor
                 isMonitoring = false;
                 cancellationTokenSource?.Cancel();
 
-                // Update UI if needed
-                // StartMonitorButton.Content = "▶ Start Monitoring";
+                // Cập nhật UI nếu cần
+                // StartMonitorButton.Content = "▶ Bắt Đầu Giám Sát";
             }
         }
 
@@ -469,14 +469,14 @@ namespace SystemMonitor
             if (!isAutoAdjustEnabled)
             {
                 isAutoAdjustEnabled = true;
-                AutoAdjustCpuButton.Content = "⏹ Stop Auto Adjustment";
+                AutoAdjustCpuButton.Content = "⏹ Dừng Điều Chỉnh Tự Động";
                 autoAdjustCancellationTokenSource = new CancellationTokenSource();
                 _powerManagementService.StartAutoAdjustCpu(autoAdjustCancellationTokenSource.Token);
             }
             else
             {
                 isAutoAdjustEnabled = false;
-                AutoAdjustCpuButton.Content = "🤖 Start Auto Adjustment";
+                AutoAdjustCpuButton.Content = "🤖 Bắt Đầu Điều Chỉnh Tự Động";
                 autoAdjustCancellationTokenSource?.Cancel();
             }
         }
@@ -490,7 +490,7 @@ namespace SystemMonitor
                     string activePlanGuid = GetCurrentActivePowerPlan();
                     if (string.IsNullOrEmpty(activePlanGuid))
                     {
-                        MessageBox.Show("Cannot get current power plan information", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("Không thể lấy thông tin kế hoạch nguồn hiện tại", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
                     }
 
@@ -512,7 +512,7 @@ namespace SystemMonitor
                             if (process.ExitCode != 0)
                             {
                                 string error = process.StandardError.ReadToEnd();
-                                MessageBox.Show($"Error setting frequency: {error}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                MessageBox.Show($"Lỗi khi đặt tần số: {error}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                                 return;
                             }
 
@@ -534,13 +534,13 @@ namespace SystemMonitor
 
                                         System.Threading.Thread.Sleep(500);
 
-                                        MessageBox.Show($"CPU minimum frequency set to {minFrequency}%\n" +
-                                                      "Changes may take a few seconds to take effect.",
-                                            "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                                        MessageBox.Show($"Tần số CPU tối thiểu đã được đặt thành {minFrequency}%\n" +
+                                                      "Thay đổi có thể mất vài giây để có hiệu lực.",
+                                            "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
                                     }
                                     else
                                     {
-                                        MessageBox.Show("Cannot apply power plan changes", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                        MessageBox.Show("Không thể áp dụng thay đổi kế hoạch nguồn", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                                     }
                                 }
                             }
@@ -549,12 +549,12 @@ namespace SystemMonitor
                 }
                 else
                 {
-                    MessageBox.Show("Please enter a valid value (1-100)", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Vui lòng nhập giá trị hợp lệ (1-100)", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error setting CPU frequency: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Lỗi khi đặt tần số CPU: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -567,7 +567,7 @@ namespace SystemMonitor
                     string activePlanGuid = GetCurrentActivePowerPlan();
                     if (string.IsNullOrEmpty(activePlanGuid))
                     {
-                        MessageBox.Show("Cannot get current power plan information", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("Không thể lấy thông tin kế hoạch nguồn hiện tại", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
                     }
 
@@ -589,7 +589,7 @@ namespace SystemMonitor
                             if (process.ExitCode != 0)
                             {
                                 string error = process.StandardError.ReadToEnd();
-                                MessageBox.Show($"Error setting frequency: {error}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                MessageBox.Show($"Lỗi khi đặt tần số: {error}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                                 return;
                             }
 
@@ -611,13 +611,13 @@ namespace SystemMonitor
 
                                         System.Threading.Thread.Sleep(500);
 
-                                        MessageBox.Show($"CPU maximum frequency set to {maxFrequency}%\n" +
-                                                      "Changes may take a few seconds to take effect.",
-                                            "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                                        MessageBox.Show($"Tần số CPU tối đa đã được đặt thành {maxFrequency}%\n" +
+                                                      "Thay đổi có thể mất vài giây để có hiệu lực.",
+                                            "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
                                     }
                                     else
                                     {
-                                        MessageBox.Show("Cannot apply power plan changes", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                        MessageBox.Show("Không thể áp dụng thay đổi kế hoạch nguồn", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                                     }
                                 }
                             }
@@ -626,12 +626,12 @@ namespace SystemMonitor
                 }
                 else
                 {
-                    MessageBox.Show("Please enter a valid value (1-100)", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Vui lòng nhập giá trị hợp lệ (1-100)", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error setting CPU frequency: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Lỗi khi đặt tần số CPU: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -647,16 +647,16 @@ namespace SystemMonitor
                         CreateNoWindow = true
                     };
                     Process.Start(psi)?.WaitForExit();
-                    MessageBox.Show($"Screen turn-off time updated: {minutes} minutes", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"Thời gian tắt màn hình đã được cập nhật: {minutes} phút", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error setting screen turn-off time: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Lỗi khi đặt thời gian tắt màn hình: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
             {
-                MessageBox.Show("Please enter a valid number of minutes.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Vui lòng nhập số phút hợp lệ.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -672,16 +672,16 @@ namespace SystemMonitor
                         CreateNoWindow = true
                     };
                     Process.Start(psi)?.WaitForExit();
-                    MessageBox.Show($"Sleep time updated: {minutes} minutes", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"Thời gian chờ đã được cập nhật: {minutes} phút", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error setting sleep time: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Lỗi khi đặt thời gian chờ: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
             {
-                MessageBox.Show("Please enter a valid number of minutes.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Vui lòng nhập số phút hợp lệ.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -702,10 +702,10 @@ namespace SystemMonitor
 
         private void EndProcess_ContextMenu_Click(object sender, RoutedEventArgs e)
         {
-            // Get selected item in ListView
+            // Lấy item được chọn trong ListView
             if (ProcessListView.SelectedItem != null)
             {
-                // Assume ProcessListView.SelectedItem has Id property
+                // Giả sử ProcessListView.SelectedItem có thuộc tính Id
                 var selectedProcess = ProcessListView.SelectedItem;
                 var processIdProperty = selectedProcess.GetType().GetProperty("Id");
 
@@ -713,11 +713,11 @@ namespace SystemMonitor
                 {
                     int processId = (int)processIdProperty.GetValue(selectedProcess);
                     var processNameProperty = selectedProcess.GetType().GetProperty("Name");
-                    string processName = processNameProperty?.GetValue(selectedProcess)?.ToString() ?? "Unknown";
+                    string processName = processNameProperty?.GetValue(selectedProcess)?.ToString() ?? "Không xác định";
 
                     var result = MessageBox.Show(
-                        $"Are you sure you want to end process '{processName}' (ID: {processId})?",
-                        "Confirm End Process",
+                        $"Bạn có chắc chắn muốn kết thúc tiến trình '{processName}' (ID: {processId})?",
+                        "Xác nhận kết thúc tiến trình",
                         MessageBoxButton.YesNo,
                         MessageBoxImage.Question);
 
@@ -729,7 +729,7 @@ namespace SystemMonitor
             }
             else
             {
-                MessageBox.Show("Please select a process to end.", "Notice",
+                MessageBox.Show("Vui lòng chọn một tiến trình để kết thúc.", "Thông báo",
                                MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
@@ -773,7 +773,7 @@ namespace SystemMonitor
                         headerClicked.Column.HeaderTemplate = Application.Current.Resources["HeaderTemplateArrowDown"] as DataTemplate;
                     }
 
-                    // Remove arrow from previously sorted header
+                    // Xóa mũi tên từ header đã sắp xếp trước đó
                     if (_lastHeaderClicked != null && _lastHeaderClicked != headerClicked)
                     {
                         _lastHeaderClicked.Column.HeaderTemplate = null;
@@ -828,7 +828,7 @@ namespace SystemMonitor
                 {
                     int processId = (int)processIdProperty.GetValue(selectedProcess);
                     var processNameProperty = selectedProcess.GetType().GetProperty("Name");
-                    string processName = processNameProperty?.GetValue(selectedProcess)?.ToString() ?? "Unknown";
+                    string processName = processNameProperty?.GetValue(selectedProcess)?.ToString() ?? "Không rõ";
 
                     // Tạo dialog để nhập giới hạn tài nguyên
                     ShowResourceLimitDialog(processId, processName);
@@ -852,7 +852,7 @@ namespace SystemMonitor
                 {
                     int processId = (int)processIdProperty.GetValue(selectedProcess);
                     var processNameProperty = selectedProcess.GetType().GetProperty("Name");
-                    string processName = processNameProperty?.GetValue(selectedProcess)?.ToString() ?? "Unknown";
+                    string processName = processNameProperty?.GetValue(selectedProcess)?.ToString() ?? "Không rõ";
 
                     var result = MessageBox.Show(
                         $"Bạn có chắc muốn bỏ giới hạn tài nguyên cho process '{processName}' (ID: {processId})?",
@@ -895,7 +895,7 @@ namespace SystemMonitor
             MessageBox.Show(message, "Giới hạn tài nguyên", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        // Method để hiển thị dialog thiết lập giới hạn
+        // Phương thức để hiển thị dialog thiết lập giới hạn
         private void ShowResourceLimitDialog(int processId, string processName)
         {
             // Tạo window dialog đơn giản
@@ -911,15 +911,15 @@ namespace SystemMonitor
 
             StackPanel mainPanel = new StackPanel() { Margin = new Thickness(20) };
 
-            // Memory limit
+            // Giới hạn bộ nhớ
             Label memoryLabel = new Label() { Content = "Giới hạn RAM (MB):" };
             TextBox memoryTextBox = new TextBox() { Name = "MemoryLimit", Margin = new Thickness(0, 0, 0, 10) };
 
-            // CPU limit
+            // Giới hạn CPU
             Label cpuLabel = new Label() { Content = "Giới hạn CPU (%):" };
             TextBox cpuTextBox = new TextBox() { Name = "CpuLimit", Margin = new Thickness(0, 0, 0, 20) };
 
-            // Buttons
+            // Các nút
             StackPanel buttonPanel = new StackPanel() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
             Button okButton = new Button() { Content = "OK", Width = 80, Height = 30, Margin = new Thickness(0, 0, 10, 0) };
             Button cancelButton = new Button() { Content = "Hủy", Width = 80, Height = 30 };
@@ -988,13 +988,13 @@ namespace SystemMonitor
 
         private void ShowSolutions_Click(object sender, RoutedEventArgs e)
         {
-            // Ẩn các phần alert settings
+            // Ẩn các phần cài đặt cảnh báo
             HeaderSection.Visibility = Visibility.Collapsed;
             SettingsGrid.Visibility = Visibility.Collapsed;
             StatusSection.Visibility = Visibility.Collapsed;
             ShowSolutionsButton.Visibility = Visibility.Collapsed;
 
-            // Hiển thị phần solutions
+            // Hiển thị phần giải pháp
             SolutionsHeader.Visibility = Visibility.Visible;
             SolutionsPanel.Visibility = Visibility.Visible;
             HideSolutionsButton.Visibility = Visibility.Visible;
@@ -1008,13 +1008,13 @@ namespace SystemMonitor
 
         private void HideSolutions_Click(object sender, RoutedEventArgs e)
         {
-            // Hiển thị lại các phần alert settings
+            // Hiển thị lại các phần cài đặt cảnh báo
             HeaderSection.Visibility = Visibility.Visible;
             SettingsGrid.Visibility = Visibility.Visible;
             StatusSection.Visibility = Visibility.Visible;
             ShowSolutionsButton.Visibility = Visibility.Visible;
 
-            // Ẩn phần solutions
+            // Ẩn phần giải pháp
             SolutionsHeader.Visibility = Visibility.Collapsed;
             SolutionsPanel.Visibility = Visibility.Collapsed;
             HideSolutionsButton.Visibility = Visibility.Collapsed;
@@ -1068,7 +1068,7 @@ namespace SystemMonitor
             var tabControl = FindName("MainTabControl") as TabControl;
             if (tabControl == null)
             {
-                // Nếu không có name, tìm theo type
+                // Nếu không có tên, tìm theo loại
                 tabControl = FindChildOfType<TabControl>(this);
             }
 
@@ -1077,7 +1077,7 @@ namespace SystemMonitor
                 switch (tabName)
                 {
                     case "PowerSettings":
-                        // Chuyển sang tab Power Settings (index 1)
+                        // Chuyển sang tab Cài đặt nguồn điện (index 1)
                         tabControl.SelectedIndex = 1;
 
                         if (parts.Length > 1)
@@ -1087,7 +1087,7 @@ namespace SystemMonitor
                         break;
 
                     case "ProcessMonitor":
-                        // Chuyển sang tab Process Monitor (index 3)
+                        // Chuyển sang tab Giám sát tiến trình (index 3)
                         tabControl.SelectedIndex = 3;
 
                         if (parts.Length > 1)
@@ -1097,7 +1097,7 @@ namespace SystemMonitor
                         break;
 
                     case "Alerts":
-                        // Chuyển sang tab Alerts (index 2)
+                        // Chuyển sang tab Cảnh báo (index 2)
                         tabControl.SelectedIndex = 2;
                         break;
                 }
@@ -1109,25 +1109,25 @@ namespace SystemMonitor
             switch (action)
             {
                 case "EnableSmartMode":
-                    // Kích hoạt Smart Mode button
+                    // Kích hoạt nút Chế độ thông minh
                     var smartButton = FindName("AutoAdjustCpuButton") as Button;
-                    if (smartButton != null && smartButton.Content.ToString().Contains("Enable"))
+                    if (smartButton != null && smartButton.Content.ToString().Contains("Bật"))
                     {
                         smartButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                        ShowActionResult("✅ Đã bật Smart Mode tự động điều chỉnh CPU");
+                        ShowActionResult("✅ Đã bật Chế độ thông minh tự động điều chỉnh CPU");
                     }
                     break;
 
                 case "SetMaxCPU":
-                    // Set Max CPU Frequency
+                    // Thiết lập tần số CPU tối đa
                     var maxFreqTextBox = FindName("MaxFrequencyTextBox") as TextBox;
                     var setMaxButton = FindName("SetMaxCpuFrequency_Click") as Button;
 
                     if (maxFreqTextBox != null && value != null)
                     {
                         maxFreqTextBox.Text = value;
-                        // Trigger set button if exists
-                        ShowActionResult($"✅ Đã set Max CPU Frequency = {value}%\nNhấn Set để áp dụng");
+                        // Kích hoạt nút thiết lập nếu tồn tại
+                        ShowActionResult($"✅ Đã thiết lập tần số CPU tối đa = {value}%\nNhấn nút Thiết lập để áp dụng");
                     }
                     break;
 
@@ -1135,13 +1135,13 @@ namespace SystemMonitor
                     var powerPlanCombo = FindName("PowerPlanComboBox") as ComboBox;
                     if (powerPlanCombo != null && value != null)
                     {
-                        // Tìm và chọn power plan phù hợp
+                        // Tìm và chọn gói nguồn điện phù hợp
                         for (int i = 0; i < powerPlanCombo.Items.Count; i++)
                         {
                             if (powerPlanCombo.Items[i].ToString().Contains(value))
                             {
                                 powerPlanCombo.SelectedIndex = i;
-                                ShowActionResult($"✅ Đã chuyển sang {value} power plan");
+                                ShowActionResult($"✅ Đã chuyển sang gói nguồn điện {value}");
                                 break;
                             }
                         }
@@ -1158,9 +1158,9 @@ namespace SystemMonitor
                     var processListView = FindName("ProcessListView") as ListView;
                     if (processListView != null)
                     {
-                        // Refresh process list trước
+                        // Làm mới danh sách tiến trình trước
                         RefreshProcessList_Click(null, null);
-                        ShowActionResult("✅ Đã refresh Process Monitor\nCác process được sắp xếp theo CPU usage");
+                        ShowActionResult("✅ Đã làm mới Giám sát tiến trình\nCác tiến trình được sắp xếp theo mức sử dụng CPU");
                     }
                     break;
 
@@ -1169,7 +1169,7 @@ namespace SystemMonitor
                     if (processListView2 != null)
                     {
                         RefreshProcessList_Click(null, null);
-                        ShowActionResult("✅ Đã refresh Process Monitor\nKiểm tra cột Memory để tìm process tốn RAM");
+                        ShowActionResult("✅ Đã làm mới Giám sát tiến trình\nKiểm tra cột Bộ nhớ để tìm tiến trình tốn RAM");
                     }
                     break;
             }
@@ -1177,7 +1177,7 @@ namespace SystemMonitor
 
         private void HandleProcessAction(string actionData)
         {
-            // Xử lý các action liên quan đến process (end process, set limit, etc.)
+            // Xử lý các hành động liên quan đến tiến trình (kết thúc tiến trình, thiết lập giới hạn, v.v.)
             var parts = actionData.Split('|');
             var action = parts[0];
 
@@ -1185,25 +1185,25 @@ namespace SystemMonitor
             {
                 case "EndHighCpuProcess":
                     ShowActionResult("💡 Hướng dẫn:\n" +
-                        "1. Chuyển sang tab Process Monitor\n" +
-                        "2. Tìm process có CPU% cao nhất\n" +
-                        "3. Right-click → End Process\n" +
-                        "⚠️ Cẩn thận với system processes!");
+                        "1. Chuyển sang tab Giám sát tiến trình\n" +
+                        "2. Tìm tiến trình có CPU% cao nhất\n" +
+                        "3. Nhấp chuột phải → Kết thúc tiến trình\n" +
+                        "⚠️ Cẩn thận với các tiến trình hệ thống!");
                     break;
 
                 case "SetResourceLimit":
-                    ShowActionResult("💡 Hướng dẫn set Resource Limit:\n" +
-                        "1. Chuyển sang tab Process Monitor\n" +
-                        "2. Right-click vào process cần giới hạn\n" +
-                        "3. Chọn 'Set Resource Limit'\n" +
-                        "4. Đặt giới hạn CPU/Memory phù hợp");
+                    ShowActionResult("💡 Hướng dẫn thiết lập giới hạn tài nguyên:\n" +
+                        "1. Chuyển sang tab Giám sát tiến trình\n" +
+                        "2. Nhấp chuột phải vào tiến trình cần giới hạn\n" +
+                        "3. Chọn 'Thiết lập giới hạn tài nguyên'\n" +
+                        "4. Đặt giới hạn CPU/Bộ nhớ phù hợp");
                     break;
             }
         }
 
         private void HandleExternalAction(string actionData)
         {
-            // Xử lý các action external (mở apps, settings, etc.)
+            // Xử lý các hành động bên ngoài (mở ứng dụng, cài đặt, v.v.)
             ShowActionResult($"💡 Thực hiện thủ công:\n{actionData}");
         }
 
@@ -1213,7 +1213,7 @@ namespace SystemMonitor
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        // Helper method để tìm child control theo type
+        // Phương thức trợ giúp để tìm control con theo loại
         private T FindChildOfType<T>(DependencyObject parent) where T : DependencyObject
         {
             if (parent == null) return null;
@@ -1287,7 +1287,7 @@ namespace SystemMonitor
                         break;
 
                     default:
-                        // Fallback: show guide
+                        // Dự phòng: hiển thị hướng dẫn
                         ShowDetailedGuide(solution);
                         break;
                 }
@@ -1301,28 +1301,28 @@ namespace SystemMonitor
 
         private void ExecuteSmartModeAction()
         {
-            // Chuyển sang tab Power Settings
+            // Chuyển sang tab Cài đặt nguồn điện
             var tabControl = FindChildOfType<TabControl>(this);
             if (tabControl != null)
             {
-                tabControl.SelectedIndex = 1; // Power Settings tab
+                tabControl.SelectedIndex = 1; // Tab Cài đặt nguồn điện
 
-                // Tìm và click Smart Mode button
+                // Tìm và nhấp nút Chế độ thông minh
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     var smartButton = FindName("AutoAdjustCpuButton") as Button;
                     if (smartButton != null)
                     {
-                        if (smartButton.Content.ToString().Contains("Enable"))
+                        if (smartButton.Content.ToString().Contains("Bật"))
                         {
                             smartButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                            ShowQuickActionResult("✅ Đã bật Smart Mode!",
-                                "Hệ thống sẽ tự động điều chỉnh CPU frequency theo mức độ sử dụng.");
+                            ShowQuickActionResult("✅ Đã bật Chế độ thông minh!",
+                                "Hệ thống sẽ tự động điều chỉnh tần số CPU theo mức độ sử dụng.");
                         }
                         else
                         {
-                            ShowQuickActionResult("ℹ️ Smart Mode đã được bật",
-                                "Smart Mode hiện đang hoạt động và tự động điều chỉnh CPU.");
+                            ShowQuickActionResult("ℹ️ Chế độ thông minh đã được bật",
+                                "Chế độ thông minh hiện đang hoạt động và tự động điều chỉnh CPU.");
                         }
                     }
                 }), System.Windows.Threading.DispatcherPriority.Loaded);
@@ -1334,27 +1334,28 @@ namespace SystemMonitor
             var tabControl = FindChildOfType<TabControl>(this);
             if (tabControl != null)
             {
-                tabControl.SelectedIndex = 1; // Power Settings tab
+                tabControl.SelectedIndex = 1; // Tab Cài đặt nguồn điện
 
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     var powerPlanCombo = FindName("PowerPlanComboBox") as ComboBox;
                     if (powerPlanCombo != null)
                     {
-                        // Tìm Power Saver hoặc Balanced plan
+                        // Tìm gói Tiết kiệm năng lượng hoặc Cân bằng
                         for (int i = 0; i < powerPlanCombo.Items.Count; i++)
                         {
                             var item = powerPlanCombo.Items[i].ToString();
-                            if (item.Contains("Power saver") || item.Contains("Balanced"))
+                            if (item.Contains("Tiết kiệm năng lượng") || item.Contains("Cân bằng") ||
+                                item.Contains("Power saver") || item.Contains("Balanced"))
                             {
                                 powerPlanCombo.SelectedIndex = i;
-                                ShowQuickActionResult("✅ Đã chuyển Power Plan!",
+                                ShowQuickActionResult("✅ Đã chuyển gói nguồn điện!",
                                     $"Chuyển sang: {item}");
                                 return;
                             }
                         }
-                        ShowQuickActionResult("ℹ️ Không tìm thấy Power Plan phù hợp",
-                            "Vui lòng chọn Power Saver hoặc Balanced manually.");
+                        ShowQuickActionResult("ℹ️ Không tìm thấy gói nguồn điện phù hợp",
+                            "Vui lòng chọn Tiết kiệm năng lượng hoặc Cân bằng thủ công.");
                     }
                 }), System.Windows.Threading.DispatcherPriority.Loaded);
             }
@@ -1365,37 +1366,37 @@ namespace SystemMonitor
             var tabControl = FindChildOfType<TabControl>(this);
             if (tabControl != null)
             {
-                tabControl.SelectedIndex = 1; // Power Settings tab
+                tabControl.SelectedIndex = 1; // Tab Cài đặt nguồn điện
 
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     var maxFreqTextBox = FindName("MaxFrequencyTextBox") as TextBox;
                     if (maxFreqTextBox != null)
                     {
-                        maxFreqTextBox.Text = "70"; // Set to 70%
-                        ShowQuickActionResult("✅ Đã set Max CPU Frequency!",
-                            "Đã đặt Max CPU Frequency = 70%. Nhấn nút 'Set' để áp dụng thay đổi.");
+                        maxFreqTextBox.Text = "70"; // Thiết lập về 70%
+                        ShowQuickActionResult("✅ Đã thiết lập tần số CPU tối đa!",
+                            "Đã đặt tần số CPU tối đa = 70%. Nhấn nút 'Thiết lập' để áp dụng thay đổi.");
                     }
                 }), System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
 
-        // Tiếp tục các event handlers cho solution buttons
+        // Tiếp tục các event handlers cho các nút giải pháp
 
         private void ExecuteProcessManagementAction()
         {
             var tabControl = FindChildOfType<TabControl>(this);
             if (tabControl != null)
             {
-                tabControl.SelectedIndex = 3; // Process Monitor tab
+                tabControl.SelectedIndex = 3; // Tab Giám sát tiến trình
 
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    // Refresh process list trước
+                    // Làm mới danh sách tiến trình trước
                     RefreshProcessList_Click(null, null);
 
-                    ShowQuickActionResult("✅ Đã chuyển sang Process Monitor!",
-                        "Process list đã được refresh. Tìm process có CPU% cao nhất để đóng.");
+                    ShowQuickActionResult("✅ Đã chuyển sang Giám sát tiến trình!",
+                        "Danh sách tiến trình đã được làm mới. Tìm tiến trình có CPU% cao nhất để đóng.");
                 }), System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
@@ -1405,14 +1406,14 @@ namespace SystemMonitor
             var tabControl = FindChildOfType<TabControl>(this);
             if (tabControl != null)
             {
-                tabControl.SelectedIndex = 3; // Process Monitor tab
+                tabControl.SelectedIndex = 3; // Tab Giám sát tiến trình
 
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     RefreshProcessList_Click(null, null);
 
-                    ShowQuickActionResult("✅ Đã mở Process Monitor!",
-                        "Right-click vào process cần giới hạn → Chọn 'Set Resource Limit'");
+                    ShowQuickActionResult("✅ Đã mở Giám sát tiến trình!",
+                        "Nhấp chuột phải vào tiến trình cần giới hạn → Chọn 'Thiết lập giới hạn tài nguyên'");
                 }), System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
@@ -1422,13 +1423,13 @@ namespace SystemMonitor
             var tabControl = FindChildOfType<TabControl>(this);
             if (tabControl != null)
             {
-                tabControl.SelectedIndex = 3; // Process Monitor tab
+                tabControl.SelectedIndex = 3; // Tab Giám sát tiến trình
 
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     RefreshProcessList_Click(null, null);
 
-                    // Phân tích và hiển thị top processes
+                    // Phân tích và hiển thị các tiến trình hàng đầu
                     AnalyzeTopProcesses();
 
                 }), System.Windows.Threading.DispatcherPriority.Loaded);
@@ -1446,22 +1447,22 @@ namespace SystemMonitor
                     if (processes != null)
                     {
                         var topCpuProcesses = processes
-                            .Where(p => p.CpuUsage > 5) // Chỉ lấy process > 5% CPU
+                            .Where(p => p.CpuUsage > 5) // Chỉ lấy tiến trình > 5% CPU
                             .OrderByDescending(p => p.CpuUsage)
                             .Take(3)
                             .ToList();
 
                         var topMemoryProcesses = processes
-                            .Where(p => p.MemoryUsage > 100) // Chỉ lấy process > 100MB RAM
+                            .Where(p => p.MemoryUsage > 100) // Chỉ lấy tiến trình > 100MB RAM
                             .OrderByDescending(p => p.MemoryUsage)
                             .Take(3)
                             .ToList();
 
-                        string analysisResult = "📊 Phân tích Process:\n\n";
+                        string analysisResult = "📊 Phân tích Tiến trình:\n\n";
 
                         if (topCpuProcesses.Any())
                         {
-                            analysisResult += "🔥 Top CPU Processes:\n";
+                            analysisResult += "🔥 Tiến trình CPU Cao Nhất:\n";
                             foreach (var proc in topCpuProcesses)
                             {
                                 analysisResult += $"  • {proc.Name}: {proc.CpuUsage:F1}%\n";
@@ -1471,7 +1472,7 @@ namespace SystemMonitor
 
                         if (topMemoryProcesses.Any())
                         {
-                            analysisResult += "💾 Top Memory Processes:\n";
+                            analysisResult += "💾 Tiến trình Bộ nhớ Cao Nhất:\n";
                             foreach (var proc in topMemoryProcesses)
                             {
                                 analysisResult += $"  • {proc.Name}: {proc.MemoryUsage:F0} MB\n";
@@ -1484,7 +1485,7 @@ namespace SystemMonitor
             }
             catch (Exception ex)
             {
-                ShowQuickActionResult("⚠️ Lỗi phân tích", $"Không thể phân tích processes: {ex.Message}");
+                ShowQuickActionResult("⚠️ Lỗi phân tích", $"Không thể phân tích tiến trình: {ex.Message}");
             }
         }
 
@@ -1504,13 +1505,13 @@ namespace SystemMonitor
         {
             _currentSolutions = solutions;
 
-            // Update solutions list UI
+            // Cập nhật giao diện danh sách giải pháp
             if (_solutionsList != null)
             {
                 _solutionsList.ItemsSource = solutions;
             }
 
-            // Show quick action buttons
+            // Hiển thị nút thao tác nhanh
             CreateQuickActionButtons(solutions);
         }
 
@@ -1529,14 +1530,14 @@ namespace SystemMonitor
 
         private void CreateQuickActionButtons(List<SolutionRecommendation> solutions)
         {
-            // Tìm container cho quick action buttons
+            // Tìm container cho nút thao tác nhanh
             var quickActionsPanel = FindName("QuickActionsPanel") as StackPanel;
 
             if (quickActionsPanel != null)
             {
                 quickActionsPanel.Children.Clear();
 
-                // Tạo quick action buttons cho top 3-4 solutions
+                // Tạo nút thao tác nhanh cho 3-4 giải pháp hàng đầu
                 foreach (var solution in solutions.Take(4))
                 {
                     var button = new Button
@@ -1563,35 +1564,35 @@ namespace SystemMonitor
 }
 
 
-    public class PowerPlan
-    {
-        public string Guid { get; set; }
-        public string Name { get; set; }
-        public bool IsActive { get; set; }
+public class PowerPlan
+{
+    public string Guid { get; set; }
+    public string Name { get; set; }
+    public bool IsActive { get; set; }
 
-        public override string ToString()
+    public override string ToString()
+    {
+        return IsActive ? $"{Name} (Đang hoạt động)" : Name;
+    }
+}
+
+public class UpdateVisitor : IVisitor
+{
+    public void VisitComputer(IComputer computer)
+    {
+        computer.Traverse(this);
+    }
+
+    public void VisitHardware(IHardware hardware)
+    {
+        hardware.Update();
+        foreach (IHardware subHardware in hardware.SubHardware)
         {
-            return IsActive ? $"{Name} (Active)" : Name;
+            subHardware.Accept(this);
         }
     }
 
-    public class UpdateVisitor : IVisitor
-    {
-        public void VisitComputer(IComputer computer)
-        {
-            computer.Traverse(this);
-        }
-
-        public void VisitHardware(IHardware hardware)
-        {
-            hardware.Update();
-            foreach (IHardware subHardware in hardware.SubHardware)
-            {
-                subHardware.Accept(this);
-            }
-        }
-
-        public void VisitSensor(ISensor sensor) { }
-        public void VisitParameter(IParameter parameter) { }
-    }
+    public void VisitSensor(ISensor sensor) { }
+    public void VisitParameter(IParameter parameter) { }
+}
 

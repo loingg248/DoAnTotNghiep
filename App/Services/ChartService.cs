@@ -79,7 +79,7 @@ namespace SystemMonitor.Services
             {
                 new LineSeries
                 {
-                    Title = "CPU Usage",
+                    Title = "Sử dụng CPU",
                     Values = new ChartValues<DataPoint>(),
                     PointGeometry = null,
                     LineSmoothness = 0.3,
@@ -92,7 +92,7 @@ namespace SystemMonitor.Services
             {
                 new LineSeries
                 {
-                    Title = "RAM Usage",
+                    Title = "Sử dụng RAM",
                     Values = new ChartValues<DataPoint>(),
                     PointGeometry = null,
                     LineSmoothness = 0.3,
@@ -121,7 +121,7 @@ namespace SystemMonitor.Services
             {
                 new LineSeries
                 {
-                    Title = "GPU Usage",
+                    Title = "Sử dụng GPU",
                     Values = new ChartValues<DataPoint>(),
                     PointGeometry = null,
                     LineSmoothness = 0.3,
@@ -134,7 +134,7 @@ namespace SystemMonitor.Services
             {
                 new LineSeries
                 {
-                    Title = "Disk Activity",
+                    Title = "Hoạt động ổ đĩa",
                     Values = new ChartValues<DataPoint>(),
                     PointGeometry = null,
                     LineSmoothness = 0.3,
@@ -162,7 +162,7 @@ namespace SystemMonitor.Services
 
         public void UpdateCharts(float cpuUsage, float ramUsage, float gpuUsage, float diskUsage)
         {
-            // Use the Dispatcher from any of the charts (they are UI elements)
+            // Sử dụng Dispatcher từ bất kỳ biểu đồ nào (chúng đều là UI elements)
             var dispatcher = CpuChart.Dispatcher;
             if (!dispatcher.CheckAccess())
             {
@@ -187,13 +187,13 @@ namespace SystemMonitor.Services
                 _diskDataPoints.RemoveAt(0);
 
             if (CpuLoad != null)
-                CpuLoad.Text = $"CPU Usage: {cpuUsage:F1}%";
+                CpuLoad.Text = $"Sử dụng CPU: {cpuUsage:F1}%";
             if (RamUsage != null)
-                RamUsage.Text = $"RAM Usage: {ramUsage:F1}%";
+                RamUsage.Text = $"Sử dụng RAM: {ramUsage:F1}%";
             if (GpuLoad != null)
-                GpuLoad.Text = $"GPU Usage: {gpuUsage:F1}%";
+                GpuLoad.Text = $"Sử dụng GPU: {gpuUsage:F1}%";
             if (DiskActivity != null)
-                DiskActivity.Text = $"Disk Activity: {diskUsage:F1}%";
+                DiskActivity.Text = $"Hoạt động ổ đĩa: {diskUsage:F1}%";
 
             var cpuValues = (ChartValues<DataPoint>)CpuChart.Series[0].Values;
             var ramValues = (ChartValues<DataPoint>)RamChart.Series[0].Values;
@@ -244,17 +244,17 @@ namespace SystemMonitor.Services
                 if (_powerManagementService != null)
                 {
                     if (CurrentMinCpuFreq != null)
-                        CurrentMinCpuFreq.Text = $"Current minimum frequency: {_powerManagementService.savedMinFrequency}%";
+                        CurrentMinCpuFreq.Text = $"Tần số tối thiểu hiện tại: {_powerManagementService.savedMinFrequency}%";
                     if (CurrentMaxCpuFreq != null)
-                        CurrentMaxCpuFreq.Text = $"Current maximum frequency: {_powerManagementService.savedMaxFrequency}%";
+                        CurrentMaxCpuFreq.Text = $"Tần số tối đa hiện tại: {_powerManagementService.savedMaxFrequency}%";
                 }
             }
             catch
             {
                 if (CurrentMinCpuFreq != null)
-                    CurrentMinCpuFreq.Text = "Current minimum frequency: Display error";
+                    CurrentMinCpuFreq.Text = "Tần số tối thiểu hiện tại: Lỗi hiển thị";
                 if (CurrentMaxCpuFreq != null)
-                    CurrentMaxCpuFreq.Text = "Current maximum frequency: Display error";
+                    CurrentMaxCpuFreq.Text = "Tần số tối đa hiện tại: Lỗi hiển thị";
             }
         }
     }

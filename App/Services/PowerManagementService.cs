@@ -58,7 +58,7 @@ namespace SystemMonitor.Services
                         {
                             if (line.Contains("Power Scheme GUID:"))
                             {
-                                // Parse power plan information
+                                // Phân tích thông tin kế hoạch nguồn
                                 string[] parts = line.Split(' ');
                                 if (parts.Length >= 4)
                                 {
@@ -94,7 +94,7 @@ namespace SystemMonitor.Services
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi khi tải danh sách power plans: {ex.Message}",
+                MessageBox.Show($"Lỗi khi tải danh sách kế hoạch nguồn: {ex.Message}",
                                "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -116,7 +116,7 @@ namespace SystemMonitor.Services
                         process.WaitForExit();
                         if (process.ExitCode == 0)
                         {
-                            MessageBox.Show("Đã thay đổi power plan thành công!",
+                            MessageBox.Show("Đã thay đổi kế hoạch nguồn thành công!",
                                            "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
                         }
                     }
@@ -124,7 +124,7 @@ namespace SystemMonitor.Services
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi khi thay đổi power plan: {ex.Message}",
+                MessageBox.Show($"Lỗi khi thay đổi kế hoạch nguồn: {ex.Message}",
                                "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -187,7 +187,7 @@ namespace SystemMonitor.Services
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error setting CPU frequency: {ex.Message}");
+                Debug.WriteLine($"Lỗi khi thiết lập tần số CPU: {ex.Message}");
             }
         }
 
@@ -219,7 +219,7 @@ namespace SystemMonitor.Services
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error getting active power plan: {ex.Message}");
+                Debug.WriteLine($"Lỗi khi lấy kế hoạch nguồn đang hoạt động: {ex.Message}");
             }
             return null;
         }
@@ -302,11 +302,11 @@ namespace SystemMonitor.Services
                     }
                 }
 
-                Debug.WriteLine($"Loaded CPU frequencies - Min: {savedMinFrequency}%, Max: {savedMaxFrequency}%");
+                Debug.WriteLine($"Đã tải tần số CPU - Tối thiểu: {savedMinFrequency}%, Tối đa: {savedMaxFrequency}%");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error loading current CPU frequencies: {ex.Message}");
+                Debug.WriteLine($"Lỗi khi tải tần số CPU hiện tại: {ex.Message}");
                 savedMinFrequency = 5;
                 savedMaxFrequency = 100;
             }
@@ -321,33 +321,33 @@ namespace SystemMonitor.Services
                     if (_monitoringService?.cpuUsageCounter != null)
                     {
                         float cpuUsage = _monitoringService.cpuUsageCounter.NextValue();
-                        Debug.WriteLine($"[Smart Mode] CPU Usage: {cpuUsage:F1}%");
+                        Debug.WriteLine($"[Chế độ thông minh] Sử dụng CPU: {cpuUsage:F1}%");
 
                         int minFreq = 0;
                         int maxFreq = 100;
                         string mode = "";
 
-                        // Smart Mode logic based on CPU usage thresholds
-                        if (cpuUsage <= 30) // Low usage (0-30%): Power saving mode
+                        // Logic chế độ thông minh dựa trên ngưỡng sử dụng CPU
+                        if (cpuUsage <= 30) // Sử dụng thấp (0-30%): Chế độ tiết kiệm năng lượng
                         {
                             minFreq = 5;
                             maxFreq = 40;
-                            mode = "Power saving mode";
+                            mode = "Chế độ tiết kiệm năng lượng";
                         }
-                        else if (cpuUsage > 30 && cpuUsage <= 70) // Medium usage (30-70%): Balanced mode
+                        else if (cpuUsage > 30 && cpuUsage <= 70) // Sử dụng trung bình (30-70%): Chế độ cân bằng
                         {
                             minFreq = 20;
                             maxFreq = 70;
-                            mode = "Balanced mode";
+                            mode = "Chế độ cân bằng";
                         }
-                        else // High usage (70%+): Performance mode
+                        else // Sử dụng cao (70%+): Chế độ hiệu suất
                         {
                             minFreq = 50;
                             maxFreq = 100;
-                            mode = "Performance mode";
+                            mode = "Chế độ hiệu suất";
                         }
 
-                        // Only adjust if frequency values have changed
+                        // Chỉ điều chỉnh nếu giá trị tần số đã thay đổi
                         if (minFreq != savedMinFrequency || maxFreq != savedMaxFrequency)
                         {
                             await SetCpuFrequency(minFreq, maxFreq);
@@ -355,42 +355,42 @@ namespace SystemMonitor.Services
                             if (AutoAdjustStatus != null)
                             {
                                 App.Current.Dispatcher.Invoke(() => {
-                                    AutoAdjustStatus.Text = $"Smart Mode: {mode} - {minFreq}%-{maxFreq}% (CPU: {cpuUsage:F1}%)";
+                                    AutoAdjustStatus.Text = $"Chế độ thông minh: {mode} - {minFreq}%-{maxFreq}% (CPU: {cpuUsage:F1}%)";
                                 });
                             }
 
-                            Debug.WriteLine($"[Smart Mode] Switched to {mode}: {minFreq}%-{maxFreq}%");
+                            Debug.WriteLine($"[Chế độ thông minh] Chuyển sang {mode}: {minFreq}%-{maxFreq}%");
                         }
                     }
 
-                    // Check every 2 seconds for more responsive adjustments
+                    // Kiểm tra mỗi 2 giây để điều chỉnh linh hoạt hơn
                     await Task.Delay(2000, cancellationToken);
                 }
             }
             catch (TaskCanceledException)
             {
-                // Expected when cancellation is requested
-                Debug.WriteLine("[Smart Mode] Auto adjustment cancelled");
+                // Mong đợi khi yêu cầu hủy bỏ
+                Debug.WriteLine("[Chế độ thông minh] Điều chỉnh tự động đã bị hủy");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[Smart Mode] Error in auto CPU adjustment: {ex.Message}");
+                Debug.WriteLine($"[Chế độ thông minh] Lỗi trong điều chỉnh tự động CPU: {ex.Message}");
 
                 if (AutoAdjustStatus != null)
                 {
                     App.Current.Dispatcher.Invoke(() => {
-                        AutoAdjustStatus.Text = $"Smart Mode error: {ex.Message}";
+                        AutoAdjustStatus.Text = $"Lỗi chế độ thông minh: {ex.Message}";
                     });
                 }
             }
             finally
             {
-                Debug.WriteLine("[Smart Mode] Auto CPU adjustment stopped");
+                Debug.WriteLine("[Chế độ thông minh] Điều chỉnh tự động CPU đã dừng");
 
                 if (AutoAdjustStatus != null)
                 {
                     App.Current.Dispatcher.Invoke(() => {
-                        AutoAdjustStatus.Text = "Smart Mode đã dừng - Automatic adjustment is disabled";
+                        AutoAdjustStatus.Text = "Chế độ thông minh đã dừng - Điều chỉnh tự động đang bị vô hiệu hóa";
                     });
                 }
             }
