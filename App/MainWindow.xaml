@@ -329,7 +329,7 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="⚙️ Cài đặt Nguồn" Style="{StaticResource TabButtonStyle}">
+            <TabItem Header="⚙️ Cài đặt Nguồn điện" Style="{StaticResource TabButtonStyle}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="20">
                         <!-- Header -->

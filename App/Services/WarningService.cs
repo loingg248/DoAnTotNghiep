@@ -14,7 +14,7 @@ namespace SystemMonitor.Services
 
         // Existing properties...
         public float CpuWarningThreshold { get; set; } = 85f;
-        public float CpuTemperatureThreshold { get; set; } = 80f;
+        public float CpuTemperatureThreshold { get; set; } = 95f;
         public float RamWarningThreshold { get; set; } = 90f;
         public float GpuWarningThreshold { get; set; } = 85f;
         public float GpuTemperatureThreshold { get; set; } = 85f;
@@ -288,61 +288,85 @@ namespace SystemMonitor.Services
             var warnings = new System.Collections.Generic.List<string>();
             bool isOverloaded = false;
 
+            // DEBUG: In ra thông tin hiện tại
+            System.Diagnostics.Debug.WriteLine("=== DEBUG WARNING SYSTEM ===");
+            System.Diagnostics.Debug.WriteLine($"Init time check: {DateTime.Now - _initTime} >= 5s = {DateTime.Now - _initTime >= TimeSpan.FromSeconds(5)}");
+            System.Diagnostics.Debug.WriteLine($"CPU: {systemInfo.CpuUsage:F1}% (Threshold: {CpuWarningThreshold}%)");
+            System.Diagnostics.Debug.WriteLine($"GPU: {systemInfo.GpuUsage:F1}% (Threshold: {GpuWarningThreshold}%)");
+            System.Diagnostics.Debug.WriteLine($"GPU Temp: {systemInfo.GpuTemperature:F1}°C (Threshold: {GpuTemperatureThreshold}°C)");
+            System.Diagnostics.Debug.WriteLine($"RAM: {systemInfo.RamUsage:F1}% (Threshold: {RamWarningThreshold}%)");
+            System.Diagnostics.Debug.WriteLine($"Last warning: {DateTime.Now - _lastWarningTime} ago");
+            System.Diagnostics.Debug.WriteLine($"Should show warning: {ShouldShowWarning()}");
+            System.Diagnostics.Debug.WriteLine($"Background mode: {IsBackgroundMode}");
+
             // Wait 5 seconds after initialization
             if (DateTime.Now - _initTime < TimeSpan.FromSeconds(5))
             {
+                System.Diagnostics.Debug.WriteLine("⏳ Đang trong thời gian chờ 5 giây khởi tạo");
                 return;
             }
 
-            // Existing warning checks...
+            // Existing warning checks với debug...
             if (systemInfo.CpuUsage > CpuWarningThreshold)
             {
                 warnings.Add($"CPU: {systemInfo.CpuUsage:F1}%");
                 isOverloaded = true;
+                System.Diagnostics.Debug.WriteLine($"✅ CPU cảnh báo: {systemInfo.CpuUsage:F1}% > {CpuWarningThreshold}%");
             }
 
             if (systemInfo.CpuTemperature > CpuTemperatureThreshold)
             {
                 warnings.Add($"CPU Temp: {systemInfo.CpuTemperature:F1}°C");
                 isOverloaded = true;
+                System.Diagnostics.Debug.WriteLine($"✅ CPU Temperature cảnh báo: {systemInfo.CpuTemperature:F1}°C > {CpuTemperatureThreshold}°C");
             }
 
             if (systemInfo.RamUsage > RamWarningThreshold)
             {
                 warnings.Add($"RAM: {systemInfo.RamUsage:F1}%");
                 isOverloaded = true;
+                System.Diagnostics.Debug.WriteLine($"✅ RAM cảnh báo: {systemInfo.RamUsage:F1}% > {RamWarningThreshold}%");
             }
 
             if (systemInfo.GpuUsage > GpuWarningThreshold)
             {
                 warnings.Add($"GPU: {systemInfo.GpuUsage:F1}%");
                 isOverloaded = true;
+                System.Diagnostics.Debug.WriteLine($"✅ GPU cảnh báo: {systemInfo.GpuUsage:F1}% > {GpuWarningThreshold}%");
             }
 
             if (systemInfo.GpuTemperature > GpuTemperatureThreshold)
             {
                 warnings.Add($"GPU Temp: {systemInfo.GpuTemperature:F1}°C");
                 isOverloaded = true;
+                System.Diagnostics.Debug.WriteLine($"✅ GPU Temperature cảnh báo: {systemInfo.GpuTemperature:F1}°C > {GpuTemperatureThreshold}°C");
             }
 
             if (systemInfo.DiskUsage > DiskWarningThreshold)
             {
                 warnings.Add($"Disk: {systemInfo.DiskUsage:F1}%");
                 isOverloaded = true;
+                System.Diagnostics.Debug.WriteLine($"✅ Disk cảnh báo: {systemInfo.DiskUsage:F1}% > {DiskWarningThreshold}%");
             }
+
+            System.Diagnostics.Debug.WriteLine($"Tổng cảnh báo: {warnings.Count}, isOverloaded: {isOverloaded}");
 
             // Handle warnings based on mode
             if (isOverloaded && ShouldShowWarning())
             {
+                System.Diagnostics.Debug.WriteLine("🚨 KÍCH HOẠT CẢNH BÁO!");
+
                 if (IsBackgroundMode)
                 {
                     // Background mode: only trigger event
                     string warningText = string.Join(", ", warnings);
+                    System.Diagnostics.Debug.WriteLine($"📱 Background warning: {warningText}");
                     WarningTriggered?.Invoke(this, warningText);
                 }
                 else
                 {
                     // Foreground mode: update UI and show popup
+                    System.Diagnostics.Debug.WriteLine("🖥️ Foreground warning - Updating UI");
                     App.Current?.Dispatcher.Invoke(() =>
                     {
                         UpdateWarningUI(isOverloaded, warnings);
@@ -357,7 +381,18 @@ namespace SystemMonitor.Services
                 {
                     UpdateWarningUI(isOverloaded, warnings);
                 });
+
+                if (!isOverloaded)
+                {
+                    System.Diagnostics.Debug.WriteLine("✅ Hệ thống hoạt động bình thường");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("⏳ Có cảnh báo nhưng đang trong cooldown period");
+                }
             }
+
+            System.Diagnostics.Debug.WriteLine("================================");
         }
 
         // Existing methods remain the same...
@@ -435,12 +470,12 @@ namespace SystemMonitor.Services
         public void UpdateThresholds(float cpuThreshold, float cpuTempThreshold, float ramThreshold,
                                     float gpuThreshold, float gpuTempThreshold, float diskThreshold)
         {
-            CpuWarningThreshold = Math.Max(50, Math.Min(100, cpuThreshold));
-            CpuTemperatureThreshold = Math.Max(60, Math.Min(100, cpuTempThreshold));
-            RamWarningThreshold = Math.Max(70, Math.Min(100, ramThreshold));
-            GpuWarningThreshold = Math.Max(50, Math.Min(100, gpuThreshold));
-            GpuTemperatureThreshold = Math.Max(60, Math.Min(100, gpuTempThreshold));
-            DiskWarningThreshold = Math.Max(80, Math.Min(100, diskThreshold));
+            CpuWarningThreshold = Math.Max(1, Math.Min(100, cpuThreshold));     // Cho phép từ 1% đến 100%
+            CpuTemperatureThreshold = Math.Max(30, Math.Min(100, cpuTempThreshold)); // Nhiệt độ từ 30°C
+            RamWarningThreshold = Math.Max(1, Math.Min(100, ramThreshold));     // RAM từ 1%
+            GpuWarningThreshold = Math.Max(1, Math.Min(100, gpuThreshold));     // GPU từ 1%
+            GpuTemperatureThreshold = Math.Max(30, Math.Min(100, gpuTempThreshold)); // GPU temp từ 30°C
+            DiskWarningThreshold = Math.Max(1, Math.Min(100, diskThreshold));   // Disk từ 1%
         }
     }
 }
