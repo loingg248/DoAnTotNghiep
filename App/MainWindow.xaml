@@ -5,7 +5,7 @@
         xmlns:lv="clr-namespace:LiveCharts;assembly=LiveCharts"
         xmlns:tb="http://www.hardcodet.net/taskbar"
         Title="System Monitor" Height="780" Width="1000"
-        StateChanged="MainWindow_StateChanged" 
+        Closing="MainWindow_Closing"
         Background="#FFF0F2F5" FontFamily="Segoe UI" FontSize="13"
         >
 
@@ -492,16 +492,36 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="⚠️ Alerts" Style="{StaticResource TabButtonStyle}">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <Border Style="{StaticResource CardStyle}">
-                        <StackPanel>
-                            <TextBlock Text="⚠️ System Alert Settings" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+            <TabItem Header="⚠️ Cảnh báo hệ thống" Style="{StaticResource TabButtonStyle}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
+                    <Border Style="{StaticResource CardStyle}" Background="White" 
+                BorderBrush="#E0E6ED" BorderThickness="1">
+                        <StackPanel Margin="30">
+                            <!-- Header Section -->
+                            <Grid x:Name="HeaderSection" Margin="0,0,0,25">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                            <TextBlock Text="Adjust warning thresholds for system components:" 
-               Margin="0,0,0,15" TextWrapping="Wrap"/>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="⚠️ Cài đặt cảnh báo hệ thống" 
+                                   FontSize="24" FontWeight="Bold" 
+                                   Foreground="#1565C0" Margin="0,0,0,8"/>
+                                    <TextBlock Text="Điều chỉnh ngưỡng cảnh báo để theo dõi hiệu suất hệ thống tối ưu" 
+                                   FontSize="14" Foreground="#666" TextWrapping="Wrap"/>
+                                </StackPanel>
 
-                            <Grid>
+                                <Button Grid.Column="1" Content="💾 Lưu cài đặt" 
+                            Click="SaveWarningSettings_Click"
+                            Background="#4CAF50" Foreground="White"
+                            BorderBrush="#4CAF50" BorderThickness="1"
+                            Padding="16,10" FontWeight="SemiBold"
+                            MinWidth="130" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <!-- Settings Grid -->
+                            <Grid x:Name="SettingsGrid" Margin="0,0,0,30">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
@@ -509,136 +529,248 @@
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
                                 <!-- CPU Settings -->
-                                <GroupBox Header="🖥️ CPU" Grid.Column="0" Grid.Row="0" Margin="5">
-                                    <StackPanel Margin="10">
-                                        <StackPanel Orientation="Horizontal" Margin="0,5">
-                                            <Label Content="Usage (%):" Width="120"/>
-                                            <TextBox x:Name="CpuThresholdTextBox" Width="60" Text="85"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="0,5">
-                                            <Label Content="Temperature (°C):" Width="120"/>
-                                            <TextBox x:Name="CpuTempThresholdTextBox" Width="60" Text="80"/>
-                                        </StackPanel>
+                                <GroupBox Header="🖥️ Bộ xử lý (CPU)" Grid.Column="0" Grid.Row="0" 
+                              Margin="0,0,15,15" Padding="20" 
+                              Background="#F8FAFC" BorderBrush="#CBD5E1" 
+                              BorderThickness="1">
+                                    <StackPanel>
+                                        <Grid Margin="0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="30"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Label Content="Sử dụng:" Grid.Column="0" 
+                                       VerticalAlignment="Center" FontWeight="Medium"/>
+                                            <TextBox x:Name="CpuThresholdTextBox" Grid.Column="1" 
+                                         Text="85" Padding="5" BorderBrush="#CBD5E1"
+                                         Background="White"/>
+                                            <TextBlock Text="%" Grid.Column="2" 
+                                          VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                        </Grid>
+                                        <Grid Margin="0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="30"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Label Content="Nhiệt độ:" Grid.Column="0" 
+                                       VerticalAlignment="Center" FontWeight="Medium"/>
+                                            <TextBox x:Name="CpuTempThresholdTextBox" Grid.Column="1" 
+                                         Text="80" Padding="5" BorderBrush="#CBD5E1"
+                                         Background="White"/>
+                                            <TextBlock Text="°C" Grid.Column="2" 
+                                          VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                        </Grid>
                                     </StackPanel>
                                 </GroupBox>
 
                                 <!-- RAM Settings -->
-                                <GroupBox Header="💾 RAM" Grid.Column="1" Grid.Row="0" Margin="5">
-                                    <StackPanel Margin="10">
-                                        <StackPanel Orientation="Horizontal" Margin="0,5">
-                                            <Label Content="Usage (%):" Width="120"/>
-                                            <TextBox x:Name="RamThresholdTextBox" Width="60" Text="90"/>
-                                        </StackPanel>
+                                <GroupBox Header="💾 Bộ nhớ (RAM)" Grid.Column="1" Grid.Row="0" 
+                              Margin="15,0,0,15" Padding="20"
+                              Background="#F8FAFC" BorderBrush="#CBD5E1" 
+                              BorderThickness="1">
+                                    <StackPanel>
+                                        <Grid Margin="0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="30"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Label Content="Sử dụng:" Grid.Column="0" 
+                                       VerticalAlignment="Center" FontWeight="Medium"/>
+                                            <TextBox x:Name="RamThresholdTextBox" Grid.Column="1" 
+                                         Text="90" Padding="5" BorderBrush="#CBD5E1"
+                                         Background="White"/>
+                                            <TextBlock Text="%" Grid.Column="2" 
+                                          VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                        </Grid>
                                     </StackPanel>
                                 </GroupBox>
 
                                 <!-- GPU Settings -->
-                                <GroupBox Header="🎮 GPU" Grid.Column="0" Grid.Row="1" Margin="5">
-                                    <StackPanel Margin="10">
-                                        <StackPanel Orientation="Horizontal" Margin="0,5">
-                                            <Label Content="Usage (%):" Width="120"/>
-                                            <TextBox x:Name="GpuThresholdTextBox" Width="60" Text="85"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="0,5">
-                                            <Label Content="Temperature (°C):" Width="120"/>
-                                            <TextBox x:Name="GpuTempThresholdTextBox" Width="60" Text="85"/>
-                                        </StackPanel>
+                                <GroupBox Header="🎮 Card đồ họa (GPU)" Grid.Column="0" Grid.Row="1" 
+                              Margin="0,0,15,0" Padding="20"
+                              Background="#F8FAFC" BorderBrush="#CBD5E1" 
+                              BorderThickness="1">
+                                    <StackPanel>
+                                        <Grid Margin="0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="30"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Label Content="Sử dụng:" Grid.Column="0" 
+                                       VerticalAlignment="Center" FontWeight="Medium"/>
+                                            <TextBox x:Name="GpuThresholdTextBox" Grid.Column="1" 
+                                         Text="85" Padding="5" BorderBrush="#CBD5E1"
+                                         Background="White"/>
+                                            <TextBlock Text="%" Grid.Column="2" 
+                                          VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                        </Grid>
+                                        <Grid Margin="0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="30"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Label Content="Nhiệt độ:" Grid.Column="0" 
+                                       VerticalAlignment="Center" FontWeight="Medium"/>
+                                            <TextBox x:Name="GpuTempThresholdTextBox" Grid.Column="1" 
+                                         Text="85" Padding="5" BorderBrush="#CBD5E1"
+                                         Background="White"/>
+                                            <TextBlock Text="°C" Grid.Column="2" 
+                                          VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                        </Grid>
                                     </StackPanel>
                                 </GroupBox>
 
                                 <!-- Disk Settings -->
-                                <GroupBox Header="💽 Disk" Grid.Column="1" Grid.Row="1" Margin="5">
-                                    <StackPanel Margin="10">
-                                        <StackPanel Orientation="Horizontal" Margin="0,5">
-                                            <Label Content="Activity (%):" Width="120"/>
-                                            <TextBox x:Name="DiskThresholdTextBox" Width="60" Text="95"/>
-                                        </StackPanel>
+                                <GroupBox Header="💽 Ổ cứng (Disk)" Grid.Column="1" Grid.Row="1" 
+                              Margin="15,0,0,0" Padding="20"
+                              Background="#F8FAFC" BorderBrush="#CBD5E1" 
+                              BorderThickness="1">
+                                    <StackPanel>
+                                        <Grid Margin="0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="30"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Label Content="Hoạt động:" Grid.Column="0" 
+                                       VerticalAlignment="Center" FontWeight="Medium"/>
+                                            <TextBox x:Name="DiskThresholdTextBox" Grid.Column="1" 
+                                         Text="95" Padding="5" BorderBrush="#CBD5E1"
+                                         Background="White"/>
+                                            <TextBlock Text="%" Grid.Column="2" 
+                                          VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                        </Grid>
                                     </StackPanel>
                                 </GroupBox>
                             </Grid>
 
-                            <Button Content="💾 Save Settings" 
-            Click="SaveWarningSettings_Click" 
-            HorizontalAlignment="Center" 
-            Margin="0,20,0,0" 
-            Width="150"/>
+                            <!-- Status Section -->
+                            <Border x:Name="StatusSection" Background="#E8F5E8" BorderBrush="#4CAF50" BorderThickness="1" 
+                        Padding="15" Margin="0,0,0,25">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="✅" FontSize="16" Margin="0,0,10,0" 
+                                   VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="WarningSettingsStatus" 
+                                   Text="Cảnh báo đang hoạt động với ngưỡng mặc định" 
+                                   Foreground="#2E7D32" FontWeight="Medium"
+                                   VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
 
-                            <Separator Margin="0,20"/>
+                            <!-- Solutions Toggle Button -->
+                            <StackPanel x:Name="ToggleButtonSection" HorizontalAlignment="Center">
+                                <Button x:Name="ShowSolutionsButton" Content="💡 Hiển thị giải pháp" 
+                            Click="ShowSolutions_Click" 
+                            Background="#FF9800" Foreground="White" BorderBrush="#FF9800"
+                            Padding="20,12" FontWeight="SemiBold"
+                            MinWidth="180" Margin="0,0,0,15"/>
 
-                            <TextBlock Text="🛠️ Quick Solutions:" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                                <Button x:Name="HideSolutionsButton" Content="⚙️ Quay lại cài đặt" 
+                            Click="HideSolutions_Click" 
+                            Background="#6C757D" Foreground="White" BorderBrush="#6C757D"
+                            Padding="20,12" FontWeight="SemiBold"
+                            MinWidth="180" Margin="0,0,0,15"
+                            Visibility="Collapsed"/>
+                            </StackPanel>
 
-                            <ScrollViewer x:Name="SolutionsPanel" MaxHeight="200" VerticalScrollBarVisibility="Auto" 
-              Visibility="Collapsed">
-                                <ItemsControl x:Name="SolutionsList">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Background="#f8f9fa" BorderBrush="#dee2e6" BorderThickness="1" 
-                    CornerRadius="8" Margin="0,8" Padding="15">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
+                            <!-- Solutions Header -->
+                            <Grid x:Name="SolutionsHeader" Margin="0,10,0,15" Visibility="Collapsed">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                                                    <!-- Solution Content -->
-                                                    <StackPanel Grid.Column="0">
-                                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                                            <TextBlock Text="{Binding Icon}" FontSize="18" Margin="0,0,10,0"/>
-                                                            <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14" 
-                                       VerticalAlignment="Center" Foreground="#1976D2"/>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="🛠️ Giải pháp khắc phục sự cố" 
+                                   FontSize="24" FontWeight="Bold" 
+                                   Foreground="#1565C0" Margin="0,0,0,8"/>
+                                    <TextBlock Text="Chọn giải pháp phù hợp để khắc phục các vấn đề về hiệu suất hệ thống" 
+                                   FontSize="14" Foreground="#666" TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <Border Grid.Column="1" Background="#FFF3E0" BorderBrush="#FF9800" 
+                            BorderThickness="1" Padding="12,8" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="⚡" FontSize="16" Margin="0,0,8,0" 
+                                       VerticalAlignment="Center"/>
+                                        <TextBlock Text="Chế độ giải pháp nhanh" 
+                                       Foreground="#E65100" FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Solutions Panel -->
+                            <ScrollViewer x:Name="SolutionsPanel" MaxHeight="300" 
+                              VerticalScrollBarVisibility="Auto" 
+                              Visibility="Collapsed">
+                                <Border Background="#F8FAFC" BorderBrush="#E0E6ED" 
+                            BorderThickness="1" Padding="15">
+                                    <ItemsControl x:Name="SolutionsList">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="White" BorderBrush="#E0E6ED" 
+                                            BorderThickness="1" Margin="0,0,0,15" Padding="20">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <!-- Solution Content -->
+                                                        <StackPanel Grid.Column="0" Margin="0,0,20,0">
+                                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                                                <Border Background="#F0F8FF" Padding="8" Margin="0,0,12,0">
+                                                                    <TextBlock Text="{Binding Icon}" FontSize="16"/>
+                                                                </Border>
+                                                                <TextBlock Text="{Binding Title}" FontWeight="Bold" 
+                                                               FontSize="16" VerticalAlignment="Center" 
+                                                               Foreground="#1565C0"/>
+                                                            </StackPanel>
+
+                                                            <TextBlock Text="{Binding Description}" 
+                                                           TextWrapping="Wrap" Margin="0,0,0,10" 
+                                                           FontSize="14" Foreground="#475569"/>
+
+                                                            <TextBlock Text="{Binding Action}" 
+                                                           Foreground="#64748B" FontSize="13" 
+                                                           TextWrapping="Wrap" FontStyle="Italic"/>
                                                         </StackPanel>
 
-                                                        <TextBlock Text="{Binding Description}" TextWrapping="Wrap" 
-                                   Margin="0,0,0,8" FontSize="13"/>
+                                                        <!-- Action Buttons -->
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                            <Button Content="🚀 Thực hiện" 
+                                                        Background="#4CAF50" Foreground="White"
+                                                        BorderBrush="#4CAF50" BorderThickness="1"
+                                                        Padding="16,8" Margin="0,0,0,8"
+                                                        FontSize="12" FontWeight="SemiBold"
+                                                        MinWidth="110"
+                                                        Click="QuickAction_Click" Tag="{Binding}"
+                                                        ToolTip="Thực hiện giải pháp ngay"/>
 
-                                                        <TextBlock Text="{Binding Action}" Foreground="#666" 
-                                   FontSize="12" TextWrapping="Wrap" FontStyle="Italic"/>
-                                                    </StackPanel>
-
-                                                    <!-- Action Buttons -->
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0">
-                                                        <!-- Quick Action Button -->
-                                                        <Button Content="🚀 Thực hiện" 
-                                Background="#4CAF50" 
-                                Foreground="White"
-                                BorderBrush="#4CAF50"
-                                Padding="12,6" 
-                                Margin="0,0,0,5"
-                                FontSize="11"
-                                FontWeight="SemiBold"
-                                Click="QuickAction_Click"
-                                Tag="{Binding}"
-                                ToolTip="Click để thực hiện giải pháp này"/>
-
-                                                        <!-- Guide Button -->
-                                                        <Button Content="📖 Hướng dẫn" 
-                                Background="#2196F3" 
-                                Foreground="White"
-                                BorderBrush="#2196F3"
-                                Padding="12,6"
-                                FontSize="11"
-                                FontWeight="SemiBold"
-                                Click="ShowGuide_Click"
-                                Tag="{Binding}"
-                                ToolTip="Xem hướng dẫn chi tiết"/>
-                                                    </StackPanel>
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
+                                                            <Button Content="📖 Hướng dẫn" 
+                                                        Background="#2196F3" Foreground="White"
+                                                        BorderBrush="#2196F3" BorderThickness="1"
+                                                        Padding="16,8" FontSize="12" FontWeight="SemiBold"
+                                                        MinWidth="110"
+                                                        Click="ShowGuide_Click" Tag="{Binding}"
+                                                        ToolTip="Xem hướng dẫn chi tiết"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Border>
                             </ScrollViewer>
-
-                            <Button x:Name="ShowSolutionsButton" Content="💡 Show Solutions" 
-        Click="ShowSolutions_Click" HorizontalAlignment="Center" 
-        Margin="0,10,0,0" Width="150" Visibility="Collapsed"/>
-                            <TextBlock x:Name="WarningSettingsStatus" 
-               Text="Warning is active with default threshold" 
-               Foreground="Green"/>
                         </StackPanel>
                     </Border>
                 </ScrollViewer>

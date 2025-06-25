@@ -131,32 +131,45 @@ namespace SystemMonitor
             _warningService.SetUIControls(WarningStatus, WarningBorder);
         }
 
-        // Event handlers cho Window
-        private void MainWindow_StateChanged(object sender, EventArgs e)
-        {
-            if (WindowState == WindowState.Minimized)
-            {
-                // Ẩn window và hiển thị tray icon
-                Hide();
-                _notifyIcon.Visibility = Visibility.Visible;
-
-                // Hiển thị thông báo
-                _notifyIcon.ShowBalloonTip("System Monitor",
-                    "Application minimized to system tray. Monitoring continues in background.",
-                    BalloonIcon.Info);
-
-                // Chuyển sang chế độ chạy ngầm
-                StartBackgroundMode();
-            }
-        }
 
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
             if (!_isReallyClosing)
             {
-                // Ngăn đóng app, chuyển sang chế độ chạy ngầm
+                // Ngăn đóng app
                 e.Cancel = true;
-                WindowState = WindowState.Minimized;
+
+                // Hiển thị dialog hỏi người dùng
+                var result = MessageBox.Show(
+                    "Bạn có muốn thu nhỏ ứng dụng xuống system tray thay vì thoát không?\n\n" +
+                    "- Chọn 'Yes' để thu nhỏ xuống system tray\n" +
+                    "- Chọn 'No' để thoát ứng dụng hoàn toàn",
+                    "System Monitor",
+                    MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    // Ẩn window và hiển thị tray icon
+                    Hide();
+                    _notifyIcon.Visibility = Visibility.Visible;
+
+                    // Hiển thị thông báo
+                    _notifyIcon.ShowBalloonTip("System Monitor",
+                        "Application minimized to system tray. Monitoring continues in background.",
+                        BalloonIcon.Info);
+
+                    // Chuyển sang chế độ chạy ngầm
+                    StartBackgroundMode();
+                }
+                else if (result == MessageBoxResult.No)
+                {
+                    // Thoát ứng dụng hoàn toàn
+                    _isReallyClosing = true;
+                    _notifyIcon?.Dispose();
+                    Application.Current.Shutdown();
+                }
+                // Nếu chọn Cancel thì không làm gì cả (giữ nguyên cửa sổ)
             }
         }
 
@@ -975,15 +988,36 @@ namespace SystemMonitor
 
         private void ShowSolutions_Click(object sender, RoutedEventArgs e)
         {
+            // Ẩn các phần alert settings
+            HeaderSection.Visibility = Visibility.Collapsed;
+            SettingsGrid.Visibility = Visibility.Collapsed;
+            StatusSection.Visibility = Visibility.Collapsed;
+            ShowSolutionsButton.Visibility = Visibility.Collapsed;
+
+            // Hiển thị phần solutions
+            SolutionsHeader.Visibility = Visibility.Visible;
+            SolutionsPanel.Visibility = Visibility.Visible;
+            HideSolutionsButton.Visibility = Visibility.Visible;
+
+            // Kiểm tra và gán dữ liệu cho SolutionsList nếu có
             if (_currentSolutions?.Any() == true)
             {
-                _solutionsList.ItemsSource = _currentSolutions;
-                _solutionsPanel.Visibility = _solutionsPanel.Visibility == Visibility.Visible ?
-                                            Visibility.Collapsed : Visibility.Visible;
-
-                _showSolutionsButton.Content = _solutionsPanel.Visibility == Visibility.Visible ?
-                                              "🔼 Hide Solutions" : "💡 Show Solutions";
+                SolutionsList.ItemsSource = _currentSolutions;
             }
+        }
+
+        private void HideSolutions_Click(object sender, RoutedEventArgs e)
+        {
+            // Hiển thị lại các phần alert settings
+            HeaderSection.Visibility = Visibility.Visible;
+            SettingsGrid.Visibility = Visibility.Visible;
+            StatusSection.Visibility = Visibility.Visible;
+            ShowSolutionsButton.Visibility = Visibility.Visible;
+
+            // Ẩn phần solutions
+            SolutionsHeader.Visibility = Visibility.Collapsed;
+            SolutionsPanel.Visibility = Visibility.Collapsed;
+            HideSolutionsButton.Visibility = Visibility.Collapsed;
         }
 
         private void Solution_Click(object sender, MouseButtonEventArgs e)
