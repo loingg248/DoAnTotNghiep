@@ -14,7 +14,7 @@ namespace SystemMonitor.Services
 
         // Existing properties...
         public float CpuWarningThreshold { get; set; } = 85f;
-        public float CpuTemperatureThreshold { get; set; } = 90f;
+        public float CpuTemperatureThreshold { get; set; } = 95f;
         public float RamWarningThreshold { get; set; } = 90f;
         public float GpuWarningThreshold { get; set; } = 85f;
         public float GpuTemperatureThreshold { get; set; } = 85f;
@@ -50,7 +50,7 @@ namespace SystemMonitor.Services
             public string Title { get; set; }
             public string Description { get; set; }
             public string Action { get; set; }
-            public string ActionType { get; set; } 
+            public string ActionType { get; set; }
             public string ActionData { get; set; }
         }
 
@@ -93,194 +93,281 @@ namespace SystemMonitor.Services
         private List<SolutionRecommendation> GetCPUSolutions()
         {
             return new List<SolutionRecommendation>
-    {
-        new() {
-            Icon = "⚡",
-            Title = "Chuyển Power Plan",
-            Description = "Chuyển sang chế độ tiết kiệm năng lượng",
-            Action = "Vào tab Power Settings → Chọn Power Saver hoặc Balanced"
-        },
-        new() {
-            Icon = "🔧",
-            Title = "Giảm CPU Frequency",
-            Description = "Hạ tốc độ CPU để giảm tải",
-            Action = "Tab Power Settings → Giảm Max CPU Frequency xuống 70-80%"
-        },
-        new() {
-            Icon = "🤖",
-            Title = "Bật Smart Mode",
-            Description = "Để hệ thống tự động điều chỉnh",
-            Action = "Tab Power Settings → Enable Smart Mode"
-        },
-        new() {
-            Icon = "🔄",
-            Title = "Quản lý Process",
-            Description = "Kiểm tra và đóng process tốn CPU",
-            Action = "Tab Process Monitor → Tìm process CPU cao → End Process"
-        }
-    };
+            {
+                new() {
+                    Icon = "⚡",
+                    Title = "Chuyển Power Plan",
+                    Description = "Chuyển sang chế độ tiết kiệm năng lượng",
+                    Action = "Vào tab Power Settings → Chọn Power Saver hoặc Balanced"
+                },
+                new() {
+                    Icon = "🔧",
+                    Title = "Giảm CPU Frequency",
+                    Description = "Hạ tốc độ CPU để giảm tải",
+                    Action = "Tab Power Settings → Giảm Max CPU Frequency xuống 70-80%"
+                },
+                new() {
+                    Icon = "🤖",
+                    Title = "Bật Smart Mode",
+                    Description = "Để hệ thống tự động điều chỉnh",
+                    Action = "Tab Power Settings → Enable Smart Mode"
+                },
+                new() {
+                    Icon = "🔄",
+                    Title = "Quản lý Process",
+                    Description = "Kiểm tra và đóng process tốn CPU",
+                    Action = "Tab Process Monitor → Tìm process CPU cao → End Process"
+                },
+                new() {
+                    Icon = "🛠️",
+                    Title = "Tắt Startup Programs",
+                    Description = "Vô hiệu hóa các chương trình khởi động không cần thiết",
+                    Action = "Task Manager → Startup → Disable unnecessary programs"
+                },
+                new() {
+                    Icon = "🔍",
+                    Title = "Kiểm tra Malware",
+                    Description = "Quét hệ thống để tìm phần mềm độc hại",
+                    Action = "Chạy Windows Defender → Full Scan"
+                }
+            };
         }
 
         private List<SolutionRecommendation> GetCPUTempSolutions()
         {
             return new List<SolutionRecommendation>
-    {
-        new() {
-            Icon = "❄️",
-            Title = "Giảm CPU Performance",
-            Description = "Hạ Max CPU Frequency để giảm nhiệt",
-            Action = "Tab Power Settings → Set Max CPU Frequency = 60-70%"
-        },
-        new() {
-            Icon = "🔋",
-            Title = "Power Saver Mode",
-            Description = "Chuyển sang chế độ tiết kiệm năng lượng",
-            Action = "Tab Power Settings → Chọn Power Saver Plan"
-        },
-        new() {
-            Icon = "🌡️",
-            Title = "Kiểm tra tản nhiệt",
-            Description = "Vệ sinh quạt CPU và tản nhiệt",
-            Action = "Tắt máy → Vệ sinh quạt → Thay keo tản nhiệt"
-        }
-    };
+            {
+                new() {
+                    Icon = "❄️",
+                    Title = "Giảm CPU Performance",
+                    Description = "Hạ Max CPU Frequency để giảm nhiệt",
+                    Action = "Tab Power Settings → Set Max CPU Frequency = 60-70%"
+                },
+                new() {
+                    Icon = "🔋",
+                    Title = "Power Saver Mode",
+                    Description = "Chuyển sang chế độ tiết kiệm năng lượng",
+                    Action = "Tab Power Settings → Chọn Power Saver Plan"
+                },
+                new() {
+                    Icon = "🌡️",
+                    Title = "Kiểm tra tản nhiệt",
+                    Description = "Vệ sinh quạt CPU và tản nhiệt",
+                    Action = "Tắt máy → Vệ sinh quạt → Thay keo tản nhiệt"
+                },
+                new() {
+                    Icon = "💨",
+                    Title = "Tăng luồng gió",
+                    Description = "Đảm bảo luồng không khí trong case tốt",
+                    Action = "Kiểm tra vị trí case → Đảm bảo không bị chặn luồng gió"
+                },
+                new() {
+                    Icon = "🖥️",
+                    Title = "Giảm tải ứng dụng",
+                    Description = "Đóng các ứng dụng nặng để giảm nhiệt CPU",
+                    Action = "Task Manager → Processes → End heavy applications"
+                }
+            };
         }
 
         private List<SolutionRecommendation> GetRAMSolutions()
         {
             return new List<SolutionRecommendation>
-    {
-        new() {
-            Icon = "🔄",
-            Title = "Tìm Process tốn RAM",
-            Description = "Kiểm tra process sử dụng RAM cao",
-            Action = "Tab Process Monitor → Sắp xếp theo Memory → End process không cần thiết"
-        },
-        new() {
-            Icon = "⚠️",
-            Title = "Giới hạn tài nguyên",
-            Description = "Đặt giới hạn RAM cho process",
-            Action = "Process Monitor → Right click process → Set Resource Limit"
-        },
-        new() {
-            Icon = "🗑️",
-            Title = "Dọn dẹp hệ thống",
-            Description = "Giải phóng bộ nhớ không sử dụng",
-            Action = "Chạy Disk Cleanup → Clear Temp files → Restart browser"
-        }
-    };
+            {
+                new() {
+                    Icon = "🔄",
+                    Title = "Tìm Process tốn RAM",
+                    Description = "Kiểm tra process sử dụng RAM cao",
+                    Action = "Tab Process Monitor → Sắp xếp theo Memory → End process không cần thiết"
+                },
+                new() {
+                    Icon = "⚠️",
+                    Title = "Giới hạn tài nguyên",
+                    Description = "Đặt giới hạn RAM cho process",
+                    Action = "Process Monitor → Right click process → Set Resource Limit"
+                },
+                new() {
+                    Icon = "🗑️",
+                    Title = "Dọn dẹp hệ thống",
+                    Description = "Giải phóng bộ nhớ không sử dụng",
+                    Action = "Chạy Disk Cleanup → Clear Temp files → Restart browser"
+                },
+                new() {
+                    Icon = "🛠️",
+                    Title = "Tăng Virtual Memory",
+                    Description = "Tăng dung lượng bộ nhớ ảo",
+                    Action = "Control Panel → System → Advanced → Performance Settings → Adjust Virtual Memory"
+                },
+                new() {
+                    Icon = "🔍",
+                    Title = "Kiểm tra Memory Leaks",
+                    Description = "Kiểm tra ứng dụng gây rò rỉ bộ nhớ",
+                    Action = "Task Manager → Processes → Monitor memory usage over time"
+                }
+            };
         }
 
         private List<SolutionRecommendation> GetGPUSolutions()
         {
             return new List<SolutionRecommendation>
-    {
-        new() {
-            Icon = "🎮",
-            Title = "Tối ưu Power Plan",
-            Description = "Chuyển sang Balanced hoặc Power Saver",
-            Action = "Tab Power Settings → Chọn Power Plan phù hợp"
-        },
-        new() {
-            Icon = "🔄",
-            Title = "Kiểm tra Process GPU",
-            Description = "Tìm ứng dụng đang sử dụng GPU cao",
-            Action = "Tab Process Monitor → Tìm process graphics-intensive → Đóng nếu không cần"
-        },
-        new() {
-            Icon = "⚡",
-            Title = "Giảm hiệu năng",
-            Description = "Hạ settings đồ họa trong game/app",
-            Action = "Giảm resolution, texture quality, disable effects"
-        }
-    };
+            {
+                new() {
+                    Icon = "🚀",
+                    Description = "Chuyển sang Balanced hoặc Power Saver",
+                    Action = "Tab Power Settings → Chọn Power Plan phù hợp"
+                },
+                new() {
+                    Icon = "🔄",
+                    Title = "Kiểm tra Process GPU",
+                    Description = "Tìm ứng dụng đang sử dụng GPU cao",
+                    Action = "Tab Process Monitor → Tìm process graphics-intensive → Đóng nếu không cần"
+                },
+                new() {
+                    Icon = "⚡",
+                    Title = "Giảm hiệu năng",
+                    Description = "Hạ settings đồ họa trong game/app",
+                    Action = "Giảm resolution, texture quality, disable effects"
+                },
+                new() {
+                    Icon = "🔧",
+                    Title = "Cập nhật Driver GPU",
+                    Description = "Cài đặt phiên bản driver GPU mới nhất",
+                    Action = "Device Manager → Display Adapters → Update Driver"
+                },
+                new() {
+                    Icon = "🎮",
+                    Title = "Tối ưu Game Settings",
+                    Description = "Sử dụng chế độ hiệu năng thấp trong game",
+                    Action = "Game Settings → Select Low Performance Mode"
+                }
+            };
         }
 
         private List<SolutionRecommendation> GetGPUTempSolutions()
         {
             return new List<SolutionRecommendation>
-    {
-        new() {
-            Icon = "🔋",
-            Title = "Power Management",
-            Description = "Giảm power limit của GPU",
-            Action = "Tab Power Settings → Chọn Power Saver để giảm GPU load"
-        },
-        new() {
-            Icon = "🌪️",
-            Title = "Tăng tốc quạt",
-            Description = "Tăng fan curve GPU",
-            Action = "MSI Afterburner → Tăng fan speed → Custom fan curve"
-        },
-        new() {
-            Icon = "❄️",
-            Title = "Vệ sinh làm mát",
-            Description = "Thổi bụi GPU và case",
-            Action = "Tắt máy → Compressed air → Vệ sinh GPU cooler"
-        }
-    };
+            {
+                new() {
+                    Icon = "🔋",
+                    Title = "Power Management",
+                    Description = "Giảm power limit của GPU",
+                    Action = "Tab Power Settings → Chọn Power Saver để giảm GPU load"
+                },
+                new() {
+                    Icon = "🌪️",
+                    Title = "Tăng tốc quạt",
+                    Description = "Tăng fan curve GPU",
+                    Action = "MSI Afterburner → Tăng fan speed → Custom fan curve"
+                },
+                new() {
+                    Icon = "❄️",
+                    Title = "Vệ sinh làm mát",
+                    Description = "Thổi bụi GPU và case",
+                    Action = "Tắt máy → Compressed air → Vệ sinh GPU cooler"
+                },
+                new() {
+                    Icon = "🌡️",
+                    Title = "Kiểm tra Nhiệt độ",
+                    Description = "Theo dõi nhiệt độ GPU trong thời gian thực",
+                    Action = "Sử dụng GPU-Z hoặc MSI Afterburner để kiểm tra"
+                },
+                new() {
+                    Icon = "🛠️",
+                    Title = "Undervolt GPU",
+                    Description = "Giảm điện áp GPU để hạ nhiệt độ",
+                    Action = "MSI Afterburner → Adjust voltage → Apply stable undervolt"
+                }
+            };
         }
 
         private List<SolutionRecommendation> GetDiskSolutions()
         {
             return new List<SolutionRecommendation>
-    {
-        new() {
-            Icon = "🔄",
-            Title = "Kiểm tra Disk Activity",
-            Description = "Tìm process đang sử dụng disk cao",
-            Action = "Tab Process Monitor → Tìm process I/O intensive → Tạm dừng hoặc đóng"
-        },
-        new() {
-            Icon = "⚠️",
-            Title = "Giới hạn I/O",
-            Description = "Đặt giới hạn disk usage cho process",
-            Action = "Process Monitor → Right click → Set Resource Limit cho disk usage"
-        },
-        new() {
-            Icon = "⏸️",
-            Title = "Tạm dừng backup/scan",
-            Description = "Dừng antivirus hoặc backup đang chạy",
-            Action = "Tạm dừng Windows Defender scan, OneDrive sync, backup software"
-        },
-        new() {
-            Icon = "💾",
-            Title = "Disk Sleep Settings",
-            Description = "Tối ưu disk power management",
-            Action = "Tab Power Settings → Điều chỉnh sleep settings cho disk"
-        }
-    };
+            {
+                new() {
+                    Icon = "🔄",
+                    Title = "Kiểm tra Disk Activity",
+                    Description = "Tìm process đang sử dụng disk cao",
+                    Action = "Tab Process Monitor → Tìm process I/O intensive → Tạm dừng hoặc đóng"
+                },
+                new() {
+                    Icon = "⚠️",
+                    Title = "Giới hạn I/O",
+                    Description = "Đặt giới hạn disk usage cho process",
+                    Action = "Process Monitor → Right click → Set Resource Limit cho disk usage"
+                },
+                new() {
+                    Icon = "⏸️",
+                    Title = "Tạm dừng backup/scan",
+                    Description = "Dừng antivirus hoặc backup đang chạy",
+                    Action = "Tạm dừng Windows Defender scan, OneDrive sync, backup software"
+                },
+                new() {
+                    Icon = "💾",
+                    Title = "Disk Sleep Settings",
+                    Description = "Tối ưu disk power management",
+                    Action = "Tab Power Settings → Điều chỉnh sleep settings cho disk"
+                },
+                new() {
+                    Icon = "🗑️",
+                    Title = "Dọn dẹp ổ đĩa",
+                    Description = "Xóa file rác và tối ưu hóa ổ đĩa",
+                    Action = "Disk Cleanup → Defragment and Optimize Drives"
+                },
+                new() {
+                    Icon = "🔍",
+                    Title = "Kiểm tra sức khỏe ổ đĩa",
+                    Description = "Kiểm tra lỗi và tình trạng ổ đĩa",
+                    Action = "Chạy Check Disk → Scan for and fix errors"
+                }
+            };
         }
 
         private List<SolutionRecommendation> GetCPUSolutionsWithActions()
         {
             return new List<SolutionRecommendation>
-    {
-        new() {
-            Icon = "🤖",
-            Title = "Bật Smart Mode",
-            Description = "Tự động điều chỉnh CPU theo tải",
-            Action = "Nhấn Enable Smart Mode trong tab Power Settings",
-            ActionType = "TAB_SWITCH",
-            ActionData = "PowerSettings|EnableSmartMode"
-        },
-        new() {
-            Icon = "🔧",
-            Title = "Giảm Max CPU Frequency",
-            Description = "Hạ tốc độ CPU xuống 70%",
-            Action = "Set Max CPU Frequency = 70% trong Power Settings",
-            ActionType = "TAB_SWITCH",
-            ActionData = "PowerSettings|SetMaxCPU|70"
-        },
-        new() {
-            Icon = "🔄",
-            Title = "Đóng Process tốn CPU",
-            Description = "Tìm và đóng process CPU cao nhất",
-            Action = "Chuyển sang Process Monitor để xem chi tiết",
-            ActionType = "TAB_SWITCH",
-            ActionData = "ProcessMonitor|SortByCPU"
-        }
-    };
+            {
+                new() {
+                    Icon = "🤖",
+                    Title = "Bật Smart Mode",
+                    Description = "Tự động điều chỉnh CPU theo tải",
+                    Action = "Nhấn Enable Smart Mode trong tab Power Settings",
+                    ActionType = "TAB_SWITCH",
+                    ActionData = "PowerSettings|EnableSmartMode"
+                },
+                new() {
+                    Icon = "🔧",
+                    Title = "Giảm Max CPU Frequency",
+                    Description = "Hạ tốc độ CPU xuống 70%",
+                    Action = "Set Max CPU Frequency = 70% trong Power Settings",
+                    ActionType = "TAB_SWITCH",
+                    ActionData = "PowerSettings|SetMaxCPU|70"
+                },
+                new() {
+                    Icon = "🔄",
+                    Title = "Đóng Process tốn CPU",
+                    Description = "Tìm và đóng process CPU cao nhất",
+                    Action = "Chuyển sang Process Monitor để xem chi tiết",
+                    ActionType = "TAB_SWITCH",
+                    ActionData = "ProcessMonitor|SortByCPU"
+                },
+                new() {
+                    Icon = "🛠️",
+                    Title = "Tắt Startup Programs",
+                    Description = "Vô hiệu hóa các chương trình khởi động không cần thiết",
+                    Action = "Task Manager → Startup → Disable unnecessary programs",
+                    ActionType = "OPEN_TASK_MANAGER",
+                    ActionData = "Startup"
+                },
+                new() {
+                    Icon = "🔍",
+                    Title = "Kiểm tra Malware",
+                    Description = "Quét hệ thống để tìm phần mềm độc hại",
+                    Action = "Chạy Windows Defender → Full Scan",
+                    ActionType = "RUN_DEFENDER",
+                    ActionData = "FullScan"
+                }
+            };
         }
 
         public void CheckSystemOverload(SystemInfoEventArgs systemInfo)

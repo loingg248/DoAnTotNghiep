@@ -110,17 +110,22 @@ namespace SystemMonitor.Services
             {
                 diskUsageCounter = new PerformanceCounter("PhysicalDisk", "% Disk Time", "_Total");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Error initializing diskUsageCounter: {ex.Message}");
             }
 
             // Khởi tạo GPU ưu tiên
             InitializePriorityGpu();
 
+            // Tìm PerformanceCounter cho GPU
             try
             {
                 var categories = PerformanceCounterCategory.GetCategories()
-                    .Where(c => c.CategoryName.Contains("GPU") || c.CategoryName.Contains("NVIDIA") || c.CategoryName.Contains("AMD"));
+                    .Where(c => c.CategoryName.Contains("GPU") ||
+                                c.CategoryName.Contains("NVIDIA") ||
+                                c.CategoryName.Contains("AMD") ||
+                                c.CategoryName.Contains("3D"));
 
                 foreach (var category in categories)
                 {
@@ -132,35 +137,39 @@ namespace SystemMonitor.Services
                             var counters = category.GetCounters(instances[0]);
                             foreach (var counter in counters)
                             {
-                                if (counter.CounterName.Contains("Utilization") || counter.CounterName.Contains("Usage"))
+                                if (counter.CounterName.Contains("Utilization") ||
+                                    counter.CounterName.Contains("Usage") ||
+                                    counter.CounterName.Contains("3D"))
                                 {
                                     gpuUsageCounter = new PerformanceCounter(category.CategoryName, counter.CounterName, instances[0]);
+                                    Debug.WriteLine($"Found GPU PerformanceCounter: {category.CategoryName}, Counter: {counter.CounterName}, Instance: {instances[0]}");
                                     break;
                                 }
                             }
+                            if (gpuUsageCounter != null) break;
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        Debug.WriteLine($"Error accessing PerformanceCounter category {category.CategoryName}: {ex.Message}");
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Error initializing GPU PerformanceCounter: {ex.Message}");
             }
         }
 
-        // Phương thức mới để xác định GPU ưu tiên
         private void InitializePriorityGpu()
         {
             if (computer == null) return;
 
-            // Danh sách ưu tiên GPU (rời -> tích hợp)
             var gpuPriorityOrder = new[]
             {
-                HardwareType.GpuNvidia,  // GPU NVIDIA (thường là GPU rời)
-                HardwareType.GpuAmd,     // GPU AMD (có thể là GPU rời)
-                HardwareType.GpuIntel    // GPU Intel (thường là GPU tích hợp)
+                HardwareType.GpuNvidia,
+                HardwareType.GpuAmd,
+                HardwareType.GpuIntel
             };
 
             foreach (var gpuType in gpuPriorityOrder)
@@ -168,58 +177,53 @@ namespace SystemMonitor.Services
                 var gpu = computer.Hardware.FirstOrDefault(h => h.HardwareType == gpuType);
                 if (gpu != null)
                 {
-                    // Kiểm tra thêm để đảm bảo ưu tiên GPU rời
+                    gpu.Update();
                     if (IsDiscreteGpu(gpu))
                     {
                         priorityGpu = gpu;
-                        Debug.WriteLine($"Đã chọn GPU rời ưu tiên: {gpu.Name}");
+                        Debug.WriteLine($"Selected priority GPU (discrete): {gpu.Name}");
                         return;
                     }
                     else if (priorityGpu == null)
                     {
-                        // Nếu chưa có GPU nào được chọn, chọn GPU này làm dự phòng
                         priorityGpu = gpu;
-                        Debug.WriteLine($"Đã chọn GPU dự phòng: {gpu.Name}");
+                        Debug.WriteLine($"Selected fallback GPU: {gpu.Name}");
                     }
                 }
             }
 
             if (priorityGpu != null)
             {
-                Debug.WriteLine($"GPU cuối cùng được chọn: {priorityGpu.Name}");
+                Debug.WriteLine($"Final selected GPU: {priorityGpu.Name}");
+            }
+            else
+            {
+                Debug.WriteLine("No GPU found for monitoring.");
             }
         }
 
-        // Phương thức kiểm tra GPU có phải là GPU rời không
         private bool IsDiscreteGpu(IHardware gpu)
         {
             string name = gpu.Name.ToLower();
-
-            // GPU rời thường có các từ khóa này
             string[] discreteKeywords = {
                 "geforce", "rtx", "gtx", "radeon", "rx ", "r9", "r7", "r5",
                 "titan", "quadro", "firepro", "vega", "fury"
             };
-
-            // GPU tích hợp thường có các từ khóa này
             string[] integratedKeywords = {
                 "intel", "uhd", "hd graphics", "iris", "integrated",
                 "apu", "ryzen", "vega 3", "vega 5", "vega 6", "vega 7", "vega 8"
             };
 
-            // Nếu chứa từ khóa GPU tích hợp, không phải GPU rời
             if (integratedKeywords.Any(keyword => name.Contains(keyword)))
             {
                 return false;
             }
 
-            // Nếu chứa từ khóa GPU rời, là GPU rời
             if (discreteKeywords.Any(keyword => name.Contains(keyword)))
             {
                 return true;
             }
 
-            // Nếu là NVIDIA hoặc AMD nhưng không có từ khóa tích hợp, có khả năng là GPU rời
             if (gpu.HardwareType == HardwareType.GpuNvidia ||
                 (gpu.HardwareType == HardwareType.GpuAmd && !name.Contains("apu")))
             {
@@ -241,6 +245,11 @@ namespace SystemMonitor.Services
             }
             catch (TaskCanceledException)
             {
+                Debug.WriteLine("Monitoring stopped due to cancellation.");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Monitoring error: {ex.Message}");
             }
         }
 
@@ -268,26 +277,8 @@ namespace SystemMonitor.Services
                 }
             }
 
-            // Cập nhật thông tin GPU ưu tiên
-            if (priorityGpu != null)
-            {
-                priorityGpu.Update();
-                systemInfo.GpuUsage = UpdateGpuInfo(priorityGpu, systemInfo);
-            }
-            else
-            {
-                // Nếu không tìm thấy GPU ưu tiên, tìm GPU đầu tiên có sẵn
-                var anyGpu = computer.Hardware.FirstOrDefault(h =>
-                    h.HardwareType == HardwareType.GpuNvidia ||
-                    h.HardwareType == HardwareType.GpuAmd ||
-                    h.HardwareType == HardwareType.GpuIntel);
-
-                if (anyGpu != null)
-                {
-                    anyGpu.Update();
-                    systemInfo.GpuUsage = UpdateGpuInfo(anyGpu, systemInfo);
-                }
-            }
+            // Cập nhật thông tin GPU
+            systemInfo.GpuUsage = UpdateGpuInfo(systemInfo);
 
             // Fallback cho GPU usage nếu không lấy được từ LibreHardwareMonitor
             if (systemInfo.GpuUsage == 0 && gpuUsageCounter != null)
@@ -295,21 +286,26 @@ namespace SystemMonitor.Services
                 try
                 {
                     systemInfo.GpuUsage = gpuUsageCounter.NextValue();
+                    Debug.WriteLine($"GPU Usage from PerformanceCounter: {systemInfo.GpuUsage:F1}%");
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Debug.WriteLine($"Error getting GPU Usage from PerformanceCounter: {ex.Message}");
                 }
             }
 
+            // Fallback cho Disk usage
             if (systemInfo.DiskUsage == 0 && diskUsageCounter != null)
             {
                 try
                 {
                     systemInfo.DiskUsage = diskUsageCounter.NextValue();
                     if (systemInfo.DiskUsage > 100) systemInfo.DiskUsage = 100;
+                    Debug.WriteLine($"Disk Usage from PerformanceCounter: {systemInfo.DiskUsage:F1}%");
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Debug.WriteLine($"Error getting Disk Usage from PerformanceCounter: {ex.Message}");
                 }
             }
 
@@ -323,7 +319,7 @@ namespace SystemMonitor.Services
             }
         }
 
-        public float UpdateCpuInfo(IHardware hardware, SystemInfoEventArgs systemInfo)
+        private float UpdateCpuInfo(IHardware hardware, SystemInfoEventArgs systemInfo)
         {
             systemInfo.CpuName = hardware.Name;
 
@@ -370,8 +366,9 @@ namespace SystemMonitor.Services
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Debug.WriteLine($"Error getting CPU temperature from WMI: {ex.Message}");
                 }
             }
 
@@ -396,10 +393,8 @@ namespace SystemMonitor.Services
             float totalMemory = 0;
             float ramUsagePercent = 0;
 
-            // Sử dụng WMI để lấy thông tin RAM chính xác ngay từ đầu
             try
             {
-                // Lấy tổng RAM vật lý từ WMI
                 using (var searcher = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem"))
                 {
                     foreach (ManagementObject obj in searcher.Get())
@@ -410,10 +405,9 @@ namespace SystemMonitor.Services
                     }
                 }
 
-                // Lấy RAM available từ Performance Counter
                 if (availableMemoryCounter != null)
                 {
-                    availableMemory = availableMemoryCounter.NextValue() / 1024.0f; // Convert MB to GB
+                    availableMemory = availableMemoryCounter.NextValue() / 1024.0f;
                     usedMemory = totalMemory - availableMemory;
 
                     if (totalMemory > 0)
@@ -428,7 +422,6 @@ namespace SystemMonitor.Services
             {
                 Debug.WriteLine($"WMI/Performance Counter failed: {ex.Message}");
 
-                // Fallback: Chỉ sử dụng sensor cuối cùng từ LibreHardwareMonitor
                 var memoryUsedSensors = new List<ISensor>();
                 var memoryAvailableSensors = new List<ISensor>();
 
@@ -453,10 +446,8 @@ namespace SystemMonitor.Services
                     }
                 }
 
-                // Chỉ lấy sensor đầu tiên hoặc có tên phù hợp nhất
                 if (memoryUsedSensors.Count > 0)
                 {
-                    // Ưu tiên sensor có tên "Memory Used" chứa "Physical" hoặc không chứa "Virtual"
                     var preferredSensor = memoryUsedSensors.FirstOrDefault(s =>
                         s.Name.Contains("Physical") || !s.Name.Contains("Virtual")) ?? memoryUsedSensors[0];
                     usedMemory = preferredSensor.Value ?? 0;
@@ -473,11 +464,9 @@ namespace SystemMonitor.Services
 
                 totalMemory = usedMemory + availableMemory;
 
-                // Kiểm tra nếu tổng > 20GB thì có vấn đề, chia đôi (có thể sensor báo cáo nhầm đơn vị)
                 if (totalMemory > 20)
                 {
                     Debug.WriteLine($"Total memory seems too high ({totalMemory:F2}GB), attempting to correct...");
-                    // Có thể sensor báo cáo bằng MB thay vì GB
                     usedMemory = usedMemory / 1024f;
                     availableMemory = availableMemory / 1024f;
                     totalMemory = usedMemory + availableMemory;
@@ -490,7 +479,6 @@ namespace SystemMonitor.Services
                 }
             }
 
-            // Đảm bảo các giá trị hợp lý
             if (usedMemory < 0) usedMemory = 0;
             if (availableMemory < 0) availableMemory = 0;
             if (ramUsagePercent < 0) ramUsagePercent = 0;
@@ -513,66 +501,181 @@ namespace SystemMonitor.Services
             return ramUsagePercent;
         }
 
-        private float UpdateGpuInfo(IHardware hardware, SystemInfoEventArgs systemInfo)
+        private float UpdateGpuInfo(SystemInfoEventArgs systemInfo)
         {
-            systemInfo.GpuName = hardware.Name;
+            float maxUsage = 0;
+            IHardware? selectedGpu = null;
 
-            float temperature = 0;
-            float usage = 0;
-            float memoryUsed = 0;
-            float memoryTotal = 0;
-            bool foundTemperature = false;
+            var gpus = computer.Hardware.Where(h =>
+                h.HardwareType == HardwareType.GpuNvidia ||
+                h.HardwareType == HardwareType.GpuAmd ||
+                h.HardwareType == HardwareType.GpuIntel).ToList();
 
-            foreach (var sensor in hardware.Sensors)
+            if (!gpus.Any())
             {
-                if (sensor.SensorType == SensorType.Temperature)
+                Debug.WriteLine("No GPUs found for monitoring.");
+                systemInfo.GpuName = "N/A";
+                systemInfo.GpuTemperature = 0;
+                systemInfo.GpuMemoryUsed = 0;
+                systemInfo.GpuMemoryTotal = 0;
+                return 0;
+            }
+
+            foreach (var gpu in gpus)
+            {
+                gpu.Update();
+                float temperature = 0;
+                float usage = 0;
+                float memoryUsed = 0;
+                float memoryTotal = 0;
+                bool foundTemperature = false;
+                bool foundCoreUsage = false;
+
+                foreach (var sensor in gpu.Sensors)
                 {
-                    if (!foundTemperature && sensor.Name.Contains("GPU"))
+                    Debug.WriteLine($"GPU: {gpu.Name}, Sensor: {sensor.Name}, Type: {sensor.SensorType}, Value: {sensor.Value}");
+
+                    if (sensor.SensorType == SensorType.Temperature && sensor.Name.Contains("GPU"))
                     {
-                        temperature = sensor.Value ?? 0;
-                        foundTemperature = true;
+                        if (!foundTemperature)
+                        {
+                            temperature = sensor.Value ?? 0;
+                            foundTemperature = true;
+                        }
+                    }
+                    else if (sensor.SensorType == SensorType.Load)
+                    {
+                        // Ưu tiên cảm biến GPU Core
+                        if (sensor.Name.Contains("GPU Core"))
+                        {
+                            usage = sensor.Value ?? 0;
+                            foundCoreUsage = true;
+                            Debug.WriteLine($"Selected GPU Core Usage: {usage:F1}%");
+                        }
+                        // Chỉ xem xét D3D hoặc Video Engine nếu chưa tìm thấy GPU Core
+                        else if (!foundCoreUsage && (sensor.Name.Contains("D3D") || sensor.Name.Contains("Video Engine")))
+                        {
+                            usage = sensor.Value ?? 0;
+                            Debug.WriteLine($"Selected Fallback Usage (D3D/Video Engine): {usage:F1}%");
+                        }
+                        // Bỏ qua cảm biến GPU Memory
+                        else if (sensor.Name.Contains("GPU Memory"))
+                        {
+                            Debug.WriteLine($"Ignoring GPU Memory Load sensor: {sensor.Name}, Value: {sensor.Value}");
+                        }
+                    }
+                    else if (sensor.SensorType == SensorType.SmallData)
+                    {
+                        if (sensor.Name.Contains("GPU Memory Used"))
+                        {
+                            memoryUsed = sensor.Value ?? 0;
+                        }
+                        else if (sensor.Name.Contains("GPU Memory Total"))
+                        {
+                            memoryTotal = sensor.Value ?? 0;
+                        }
                     }
                 }
-                else if (sensor.SensorType == SensorType.Load)
+
+                // Chỉ cập nhật maxUsage nếu tìm thấy cảm biến GPU Core hoặc D3D/Video Engine
+                if (foundCoreUsage || usage > 0)
                 {
-                    if (sensor.Name.Contains("GPU Core") || sensor.Name.Contains("GPU"))
+                    if (usage > maxUsage)
                     {
-                        usage = sensor.Value ?? 0;
+                        maxUsage = usage;
+                        selectedGpu = gpu;
+                        systemInfo.GpuName = gpu.Name;
+                        systemInfo.GpuTemperature = temperature;
+                        systemInfo.GpuMemoryUsed = memoryUsed;
+                        systemInfo.GpuMemoryTotal = memoryTotal;
                     }
                 }
-                else if (sensor.SensorType == SensorType.SmallData)
+
+                Debug.WriteLine($"GPU: {gpu.Name}, Usage: {usage:F1}%, VRAM: {(memoryTotal > 0 ? (memoryUsed / memoryTotal * 100) : 0):F1}%");
+            }
+
+            // Kiểm tra priorityGpu nếu không tìm thấy usage
+            if (maxUsage == 0 && priorityGpu != null)
+            {
+                priorityGpu.Update();
+                float temperature = 0;
+                float usage = 0;
+                float memoryUsed = 0;
+                float memoryTotal = 0;
+                bool foundTemperature = false;
+                bool foundCoreUsage = false;
+
+                foreach (var sensor in priorityGpu.Sensors)
                 {
-                    if (sensor.Name.Contains("GPU Memory Used"))
+                    Debug.WriteLine($"Priority GPU: {priorityGpu.Name}, Sensor: {sensor.Name}, Type: {sensor.SensorType}, Value: {sensor.Value}");
+
+                    if (sensor.SensorType == SensorType.Temperature && sensor.Name.Contains("GPU"))
                     {
-                        memoryUsed = sensor.Value ?? 0;
+                        if (!foundTemperature)
+                        {
+                            temperature = sensor.Value ?? 0;
+                            foundTemperature = true;
+                        }
                     }
-                    else if (sensor.Name.Contains("GPU Memory Total"))
+                    else if (sensor.SensorType == SensorType.Load)
                     {
-                        memoryTotal = sensor.Value ?? 0;
+                        if (sensor.Name.Contains("GPU Core"))
+                        {
+                            usage = sensor.Value ?? 0;
+                            foundCoreUsage = true;
+                            Debug.WriteLine($"Selected Priority GPU Core Usage: {usage:F1}%");
+                        }
+                        else if (!foundCoreUsage && (sensor.Name.Contains("D3D") || sensor.Name.Contains("Video Engine")))
+                        {
+                            usage = sensor.Value ?? 0;
+                            Debug.WriteLine($"Selected Priority Fallback Usage (D3D/Video Engine): {usage:F1}%");
+                        }
+                        else if (sensor.Name.Contains("GPU Memory"))
+                        {
+                            Debug.WriteLine($"Ignoring GPU Memory Load sensor: {sensor.Name}, Value: {sensor.Value}");
+                        }
                     }
+                    else if (sensor.SensorType == SensorType.SmallData)
+                    {
+                        if (sensor.Name.Contains("GPU Memory Used"))
+                        {
+                            memoryUsed = sensor.Value ?? 0;
+                        }
+                        else if (sensor.Name.Contains("GPU Memory Total"))
+                        {
+                            memoryTotal = sensor.Value ?? 0;
+                        }
+                    }
+                }
+
+                if (foundCoreUsage || usage > 0)
+                {
+                    maxUsage = usage;
+                    selectedGpu = priorityGpu;
+                    systemInfo.GpuName = priorityGpu.Name;
+                    systemInfo.GpuTemperature = temperature;
+                    systemInfo.GpuMemoryUsed = memoryUsed;
+                    systemInfo.GpuMemoryTotal = memoryTotal;
                 }
             }
 
-            systemInfo.GpuTemperature = temperature;
-            systemInfo.GpuMemoryUsed = memoryUsed;
-            systemInfo.GpuMemoryTotal = memoryTotal;
-
+            // Cập nhật UI
             App.Current?.Dispatcher.Invoke(() =>
             {
                 if (GpuName != null)
                 {
-                    // Hiển thị loại GPU để người dùng biết đang theo dõi GPU nào
-                    string gpuType = IsDiscreteGpu(hardware) ? " (GPU rời)" : " (GPU tích hợp)";
-                    GpuName.Text = $"GPU Name: {hardware.Name}{gpuType}";
+                    string gpuType = selectedGpu != null && IsDiscreteGpu(selectedGpu) ? " (GPU rời)" : " (GPU tích hợp)";
+                    GpuName.Text = $"GPU Name: {(selectedGpu != null ? selectedGpu.Name : "N/A")}{gpuType}";
                 }
-                if (GpuTemp != null) GpuTemp.Text = $"GPU Temperature: {temperature:F1}°C";
-                if (GpuLoad != null) GpuLoad.Text = $"GPU Usage: {usage:F1}%";
+                if (GpuTemp != null) GpuTemp.Text = $"GPU Temperature: {systemInfo.GpuTemperature:F1}°C";
+                if (GpuLoad != null) GpuLoad.Text = $"GPU Usage: {maxUsage:F1}%";
 
                 if (GpuMemory != null)
                 {
-                    if (memoryTotal > 0)
+                    if (systemInfo.GpuMemoryTotal > 0)
                     {
-                        GpuMemory.Text = $"GPU Memory: {memoryUsed:F0}/{memoryTotal:F0} MB ({memoryUsed / memoryTotal * 100:F1}%)";
+                        float vramUsagePercent = (systemInfo.GpuMemoryUsed / systemInfo.GpuMemoryTotal) * 100;
+                        GpuMemory.Text = $"GPU Memory: {systemInfo.GpuMemoryUsed:F0}/{systemInfo.GpuMemoryTotal:F0} MB ({vramUsagePercent:F1}%)";
                     }
                     else
                     {
@@ -581,7 +684,8 @@ namespace SystemMonitor.Services
                 }
             });
 
-            return usage;
+            Debug.WriteLine($"Final GPU Usage: {maxUsage:F1}%, VRAM Usage: {(systemInfo.GpuMemoryTotal > 0 ? (systemInfo.GpuMemoryUsed / systemInfo.GpuMemoryTotal * 100) : 0):F1}%");
+            return maxUsage;
         }
 
         private float UpdateDiskInfo(IHardware hardware, SystemInfoEventArgs systemInfo)
@@ -595,7 +699,6 @@ namespace SystemMonitor.Services
             bool foundTemperature = false;
             bool foundDiskSpace = false;
 
-            //In ra tất cả sensors để kiểm tra
             Debug.WriteLine($"=== Disk Hardware: {hardware.Name} ===");
             foreach (var sensor in hardware.Sensors)
             {
@@ -618,7 +721,6 @@ namespace SystemMonitor.Services
                 }
                 else if (sensor.SensorType == SensorType.Data)
                 {
-                    // Mở rộng tìm kiếm tên sensor
                     if (sensor.Name.Contains("Used") && (sensor.Name.Contains("Space") || sensor.Name.Contains("Storage")))
                     {
                         used = sensor.Value ?? 0;
@@ -634,7 +736,6 @@ namespace SystemMonitor.Services
                 }
             }
 
-            // Nếu không tìm thấy thông tin disk space từ LibreHardwareMonitor, sử dụng DriveInfo
             if (!foundDiskSpace || total == 0)
             {
                 try
@@ -644,12 +745,10 @@ namespace SystemMonitor.Services
 
                     foreach (var drive in drives)
                     {
-                        // Lấy thông tin của ổ đĩa chính (thường là C:)
                         if (drive.Name.StartsWith("C:") || drives.Count() == 1)
                         {
-                            total = drive.TotalSize / (1024f * 1024f * 1024f); // Convert to GB
-                            used = (drive.TotalSize - drive.AvailableFreeSpace) / (1024f * 1024f * 1024f); // Convert to GB
-
+                            total = drive.TotalSize / (1024f * 1024f * 1024f);
+                            used = (drive.TotalSize - drive.AvailableFreeSpace) / (1024f * 1024f * 1024f);
                             Debug.WriteLine($"DriveInfo - Drive: {drive.Name}, Total: {total:F1} GB, Used: {used:F1} GB");
                             foundDiskSpace = true;
                             break;
@@ -662,7 +761,6 @@ namespace SystemMonitor.Services
                 }
             }
 
-            // Nếu vẫn không có, thử sử dụng WMI
             if (!foundDiskSpace || total == 0)
             {
                 try
@@ -675,12 +773,11 @@ namespace SystemMonitor.Services
                             var size = Convert.ToDouble(obj["Size"]);
                             var freeSpace = Convert.ToDouble(obj["FreeSpace"]);
 
-                            total = (float)(size / (1024.0 * 1024.0 * 1024.0)); // Convert to GB
-                            used = (float)((size - freeSpace) / (1024.0 * 1024.0 * 1024.0)); // Convert to GB
-
+                            total = (float)(size / (1024.0 * 1024.0 * 1024.0));
+                            used = (float)((size - freeSpace) / (1024.0 * 1024.0 * 1024.0));
                             Debug.WriteLine($"WMI - Total: {total:F1} GB, Used: {used:F1} GB");
                             foundDiskSpace = true;
-                            break; // Chỉ lấy ổ đĩa đầu tiên
+                            break;
                         }
                     }
                 }
@@ -694,7 +791,6 @@ namespace SystemMonitor.Services
             systemInfo.DiskUsed = used;
             systemInfo.DiskTotal = total;
 
-            // Cập nhật UI
             App.Current?.Dispatcher.Invoke(() =>
             {
                 if (DiskName != null) DiskName.Text = $"Disk Name: {hardware.Name}";
@@ -719,7 +815,6 @@ namespace SystemMonitor.Services
             return activity;
         }
 
-        // Phương thức public để thay đổi GPU ưu tiên thủ công (tùy chọn)
         public void SetPriorityGpu(string gpuName)
         {
             if (computer == null) return;
@@ -733,11 +828,10 @@ namespace SystemMonitor.Services
             if (gpu != null)
             {
                 priorityGpu = gpu;
-                Debug.WriteLine($"Đã thay đổi GPU ưu tiên thành: {gpu.Name}");
+                Debug.WriteLine($"Changed priority GPU to: {gpu.Name}");
             }
         }
 
-        // Phương thức để lấy danh sách tất cả GPU có sẵn
         public string[] GetAvailableGpus()
         {
             if (computer == null) return new string[0];
