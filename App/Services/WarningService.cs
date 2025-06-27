@@ -14,7 +14,7 @@ namespace SystemMonitor.Services
 
         // Existing properties...
         public float CpuWarningThreshold { get; set; } = 85f;
-        public float CpuTemperatureThreshold { get; set; } = 95f;
+        public float CpuTemperatureThreshold { get; set; } = 90f;
         public float RamWarningThreshold { get; set; } = 90f;
         public float GpuWarningThreshold { get; set; } = 85f;
         public float GpuTemperatureThreshold { get; set; } = 85f;

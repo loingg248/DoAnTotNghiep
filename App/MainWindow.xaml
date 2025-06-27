@@ -674,7 +674,7 @@
                             MinWidth="180" Margin="0,0,0,15"/>
 
                                 <Button x:Name="HideSolutionsButton" Content="⚙️ Quay lại cài đặt" 
-                            Click="HideSolutions_Click" 
+                            Click="HideSolutions_Click"     
                             Background="#6C757D" Foreground="White" BorderBrush="#6C757D"
                             Padding="20,12" FontWeight="SemiBold"
                             MinWidth="180" Margin="0,0,0,15"
@@ -785,8 +785,8 @@
                             <!-- Control buttons -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
                                 <Button Content="🔄 Làm mới" Width="100" Click="RefreshProcessList_Click"/>
-                                <Button Content="▶ Bắt đầu giám sát" Width="120" Click="StartProcessMonitor_Click"/>
-                                <Button Content="⏹ Dừng giám sát" Width="120" Click="StopProcessMonitor_Click"/>
+                                <Button Content="▶ Bắt đầu giám sát" Width="160" Click="StartProcessMonitor_Click"/>
+                                <Button Content="⏹ Dừng giám sát" Width="140" Click="StopProcessMonitor_Click"/>
                             </StackPanel>
 
                             <!-- Process count -->

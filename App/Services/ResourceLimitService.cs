@@ -17,11 +17,60 @@ namespace SystemMonitor.Services
         private Timer _monitoringTimer;
         private readonly object _lockObject = new object();
 
+        private readonly Dictionary<int, ProcessCpuTracker> _cpuTrackers;
+    
+
         public ResourceLimitService()
         {
             _processLimits = new Dictionary<int, ProcessResourceLimit>();
             _jobHandles = new Dictionary<int, IntPtr>();
             _throttleInfo = new Dictionary<int, ProcessThrottleInfo>();
+            _cpuTrackers = new Dictionary<int, ProcessCpuTracker>();
+        }
+
+        public class ProcessCpuTracker
+        {
+            public DateTime LastCheckTime { get; set; }
+            public TimeSpan LastCpuTime { get; set; }
+            public double CurrentCpuUsage { get; set; }
+            public double AverageCpuUsage { get; set; }
+            public List<double> CpuHistory { get; set; } = new List<double>();
+
+            public ProcessCpuTracker()
+            {
+                LastCheckTime = DateTime.Now;
+            }
+
+            public void UpdateCpuUsage(Process process)
+            {
+                var currentTime = DateTime.Now;
+                var currentCpuTime = process.TotalProcessorTime;
+
+                if (LastCheckTime != DateTime.MinValue && LastCpuTime != TimeSpan.Zero)
+                {
+                    var timeDiff = currentTime - LastCheckTime;
+                    var cpuDiff = currentCpuTime - LastCpuTime;
+
+                    if (timeDiff.TotalMilliseconds > 0)
+                    {
+                        // Tính CPU usage (%)
+                        CurrentCpuUsage = (cpuDiff.TotalMilliseconds / timeDiff.TotalMilliseconds) * 100.0 / Environment.ProcessorCount;
+
+                        // Lưu lịch sử để tính average
+                        CpuHistory.Add(CurrentCpuUsage);
+                        if (CpuHistory.Count > 10) // Giữ 10 mẫu gần nhất
+                        {
+                            CpuHistory.RemoveAt(0);
+                        }
+
+                        // Tính average
+                        AverageCpuUsage = CpuHistory.Average();
+                    }
+                }
+
+                LastCheckTime = currentTime;
+                LastCpuTime = currentCpuTime;
+            }
         }
 
         // Thêm giới hạn tài nguyên với các tùy chọn mới
@@ -42,6 +91,7 @@ namespace SystemMonitor.Services
                         LastMemoryCheck = DateTime.Now,
                         ViolationCount = 0
                     };
+                    _cpuTrackers[processId] = new ProcessCpuTracker(); // Thêm CPU tracker
                 }
 
                 return CreateAdvancedJobForProcess(processId, limit, options ?? new ResourceLimitOptions());
@@ -211,20 +261,24 @@ namespace SystemMonitor.Services
                             var throttleInfo = _throttleInfo[kvp.Key];
                             var limit = kvp.Value;
 
+                            // Cập nhật CPU tracking
+                            if (_cpuTrackers.ContainsKey(kvp.Key))
+                            {
+                                _cpuTrackers[kvp.Key].UpdateCpuUsage(process);
+                            }
+
                             // Kiểm tra memory
                             var memoryUsageMB = process.WorkingSet64 / (1024 * 1024);
-
                             if (limit.MemoryLimitMB > 0)
                             {
                                 HandleMemoryViolation(process, limit, throttleInfo, memoryUsageMB);
                             }
 
-                            // Kiểm tra CPU (cần implement CPU usage tracking)
+                            // Kiểm tra CPU với implementation đầy đủ
                             if (limit.CpuLimitPercent > 0)
                             {
                                 HandleCpuViolation(process, limit, throttleInfo);
                             }
-
                         }
                         catch (ArgumentException)
                         {
@@ -294,8 +348,149 @@ namespace SystemMonitor.Services
         // Xử lý vi phạm CPU
         private void HandleCpuViolation(Process process, ProcessResourceLimit limit, ProcessThrottleInfo throttleInfo)
         {
-            // Implementation for CPU monitoring and throttling
-            // Cần thêm CPU usage tracking
+            if (!_cpuTrackers.ContainsKey(process.Id))
+                return;
+
+            var cpuTracker = _cpuTrackers[process.Id];
+            var options = throttleInfo.Options;
+
+            // Sử dụng average CPU để tránh false positive
+            var currentCpuUsage = cpuTracker.AverageCpuUsage;
+            var cpuViolationThreshold = limit.CpuLimitPercent * (1.0 + 0.1); // 10% tolerance
+
+            if (currentCpuUsage > cpuViolationThreshold)
+            {
+                throttleInfo.ViolationCount++;
+
+                switch (options.CpuViolationAction)
+                {
+                    case ViolationAction.Warning:
+                        ShowCpuWarning(process.ProcessName, process.Id, limit.CpuLimitPercent, currentCpuUsage);
+                        break;
+
+                    case ViolationAction.Throttle:
+                        ThrottleProcessForCpu(process, throttleInfo, currentCpuUsage, limit.CpuLimitPercent);
+                        break;
+
+                    case ViolationAction.SuspendResume:
+                        if (throttleInfo.ViolationCount % 2 == 0) // Suspend mỗi 2 lần vi phạm
+                        {
+                            SuspendResumeProcessForCpu(process, throttleInfo);
+                        }
+                        break;
+                }
+            }
+            else if (currentCpuUsage < limit.CpuLimitPercent * 0.7) // Dưới 70% limit
+            {
+                // Giảm violation count và restore nếu cần
+                if (throttleInfo.ViolationCount > 0)
+                {
+                    throttleInfo.ViolationCount = Math.Max(0, throttleInfo.ViolationCount - 1);
+                    if (throttleInfo.IsThrottled)
+                    {
+                        RestoreProcessPriority(process, throttleInfo);
+                    }
+                }
+            }
+        }
+
+        private void ShowCpuWarning(string processName, int processId, int limitPercent, double actualPercent)
+        {
+            Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                MessageBox.Show($"Process {processName} (ID: {processId}) đã vượt giới hạn CPU!\n" +
+                              $"Giới hạn: {limitPercent}%, Thực tế: {actualPercent:F1}%",
+                              "Cảnh báo giới hạn CPU", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }));
+        }
+
+        private void ThrottleProcessForCpu(Process process, ProcessThrottleInfo throttleInfo, double currentCpu, int limitPercent)
+        {
+            try
+            {
+                if (!throttleInfo.IsThrottled)
+                {
+                    throttleInfo.OriginalPriority = process.PriorityClass;
+                    throttleInfo.IsThrottled = true;
+                    throttleInfo.ThrottleStartTime = DateTime.Now;
+                }
+
+                // Điều chỉnh priority dựa trên mức độ vi phạm
+                var violationRatio = currentCpu / limitPercent;
+
+                if (violationRatio > 2.0) // Vượt quá 200% limit
+                {
+                    process.PriorityClass = ProcessPriorityClass.Idle;
+                }
+                else if (violationRatio > 1.5) // Vượt quá 150% limit
+                {
+                    process.PriorityClass = ProcessPriorityClass.BelowNormal;
+                }
+                else
+                {
+                    process.PriorityClass = throttleInfo.Options.ThrottledPriority;
+                }
+
+                // Điều chỉnh processor affinity để giới hạn CPU cores
+                if (violationRatio > 1.8)
+                {
+                    SetProcessorAffinity(process, 1); // Chỉ cho phép 1 core
+                }
+                else if (violationRatio > 1.4)
+                {
+                    SetProcessorAffinity(process, Environment.ProcessorCount / 2); // 50% cores
+                }
+            }
+            catch (Exception)
+            {
+                // Không thể điều chỉnh process
+            }
+        }
+
+        private void SuspendResumeProcessForCpu(Process process, ProcessThrottleInfo throttleInfo)
+        {
+            try
+            {
+                if (!throttleInfo.IsSuspended)
+                {
+                    SuspendProcess(process.Id);
+                    throttleInfo.IsSuspended = true;
+                    throttleInfo.SuspendStartTime = DateTime.Now;
+
+                    // Suspend lâu hơn cho CPU violation
+                    var suspendDuration = Math.Min(throttleInfo.Options.SuspendDurationMs * 2, 5000); // Tối đa 5s
+
+                    Task.Delay(suspendDuration).ContinueWith(_ =>
+                    {
+                        if (throttleInfo.IsSuspended)
+                        {
+                            ResumeProcess(process.Id);
+                            throttleInfo.IsSuspended = false;
+                        }
+                    });
+                }
+            }
+            catch (Exception)
+            {
+                // Không thể suspend process
+            }
+        }
+
+        private void SetProcessorAffinity(Process process, int allowedCores)
+        {
+            try
+            {
+                if (allowedCores <= 0 || allowedCores > Environment.ProcessorCount)
+                    return;
+
+                // Tạo affinity mask cho số cores được phép
+                IntPtr affinityMask = new IntPtr((1 << allowedCores) - 1);
+                process.ProcessorAffinity = affinityMask;
+            }
+            catch (Exception)
+            {
+                // Không thể set affinity
+            }
         }
 
         // Throttle process bằng cách giảm priority
@@ -405,11 +600,16 @@ namespace SystemMonitor.Services
                         _processLimits.Remove(processId);
                     }
 
+                    if (_cpuTrackers.ContainsKey(processId)) // Thêm cleanup cho CPU tracker
+                    {
+                        _cpuTrackers.Remove(processId);
+                    }
+
                     if (_throttleInfo.ContainsKey(processId))
                     {
                         var throttleInfo = _throttleInfo[processId];
 
-                        // Restore process state nếu cần
+                        // Restore process state
                         if (throttleInfo.IsThrottled || throttleInfo.IsSuspended)
                         {
                             try
@@ -418,6 +618,8 @@ namespace SystemMonitor.Services
                                 if (throttleInfo.IsThrottled)
                                 {
                                     process.PriorityClass = throttleInfo.OriginalPriority;
+                                    // Restore processor affinity to all cores
+                                    process.ProcessorAffinity = new IntPtr((1 << Environment.ProcessorCount) - 1);
                                 }
                                 if (throttleInfo.IsSuspended)
                                 {
@@ -439,6 +641,18 @@ namespace SystemMonitor.Services
             catch (Exception)
             {
                 return false;
+            }
+        }
+
+        public double GetProcessCpuUsage(int processId)
+        {
+            lock (_lockObject)
+            {
+                if (_cpuTrackers.ContainsKey(processId))
+                {
+                    return _cpuTrackers[processId].CurrentCpuUsage;
+                }
+                return 0;
             }
         }
 
