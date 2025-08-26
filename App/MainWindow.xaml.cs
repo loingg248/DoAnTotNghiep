@@ -889,7 +889,6 @@ namespace SystemMonitor
             {
                 message += $"• {limit.ProcessName} (ID: {limit.ProcessId})\n";
                 message += $"  RAM: {limit.MemoryLimitMB}MB, CPU: {limit.CpuLimitPercent}%\n";
-                message += $"  Thời gian tạo: {limit.CreatedTime:HH:mm:ss dd/MM/yyyy}\n\n";
             }
 
             MessageBox.Show(message, "Giới hạn tài nguyên", MessageBoxButton.OK, MessageBoxImage.Information);

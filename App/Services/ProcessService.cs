@@ -13,7 +13,6 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using DocumentFormat.OpenXml.Drawing.Charts;
 
 namespace SystemMonitor.Services
 {
@@ -30,18 +29,18 @@ namespace SystemMonitor.Services
         private Timer _processTimer;
         private readonly object _lockObject = new object();
 
-        // Để theo dõi CPU usage - FIXED
+        // Để theo dõi CPU usage
         private Dictionary<int, ProcessCpuInfo> _previousProcessInfo;
         private DateTime _lastUpdateTime;
 
         // Cache cho icons
         private Dictionary<string, ImageSource> _iconCache;
 
-        // FIXED: Thêm thông tin hệ thống
+        // Thông tin hệ thống
         private readonly int _processorCount;
         private PerformanceCounter _totalCpuCounter;
 
-        // Cấu hình cập nhật - IMPROVED
+        // Cấu hình cập nhật
         private const int MAX_DISPLAYED_PROCESSES = 50;
         private const int UPDATE_INTERVAL_MS = 1000; // Giảm xuống 1s để chính xác hơn
         private const double CPU_CHANGE_THRESHOLD = 0.5; // Giảm threshold
@@ -57,10 +56,10 @@ namespace SystemMonitor.Services
 
             _resourceLimitService = new ResourceLimitService();
 
-            // FIXED: Lấy số core CPU
+            // Lấy số core CPU
             _processorCount = Environment.ProcessorCount;
 
-            // FIXED: Khởi tạo counter cho tổng CPU
+            // Khởi tạo counter cho tổng CPU
             try
             {
                 _totalCpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
@@ -103,12 +102,12 @@ namespace SystemMonitor.Services
             {
                 var currentTime = DateTime.Now;
 
-                // FIXED: Thực hiện việc lấy process data trên background thread
+                // Thực hiện việc lấy process data trên background thread
                 Task.Run(() =>
                 {
                     try
                     {
-                        var processData = new List<(int Id, string Name, long Memory, double Cpu, string Status, Process Process)>();
+                        var processData = new List<(int Id, string Name, long Memory, double Cpu, string Status, ProcessPriorityClass Priority, Process Process)>();
 
                         foreach (var process in Process.GetProcesses().Where(p => !string.IsNullOrEmpty(p.ProcessName)))
                         {
@@ -119,8 +118,9 @@ namespace SystemMonitor.Services
                                 var memory = GetProcessMemoryUsage(process);
                                 var cpu = CalculateCpuUsage(process, currentTime);
                                 var status = GetProcessStatus(process);
+                                var priority = GetProcessPriority(process);
 
-                                processData.Add((id, name, memory, cpu, status, process));
+                                processData.Add((id, name, memory, cpu, status, priority, process));
                             }
                             catch
                             {
@@ -128,7 +128,7 @@ namespace SystemMonitor.Services
                             }
                         }
 
-                        // FIXED: Tạo UI objects trên UI thread
+                        // Tạo UI objects trên UI thread
                         Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                         {
                             try
@@ -144,6 +144,7 @@ namespace SystemMonitor.Services
                                         MemoryUsage = data.Memory,
                                         CpuUsage = data.Cpu,
                                         Status = data.Status,
+                                        Priority = data.Priority,
                                         Icon = GetProcessIcon(data.Process)
                                     };
 
@@ -161,8 +162,8 @@ namespace SystemMonitor.Services
                             }
                             catch (Exception ex)
                             {
-                                System.Windows.MessageBox.Show($"Lỗi khi cập nhật UI: {ex.Message}", "Lỗi",
-                                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                                MessageBox.Show($"Lỗi khi cập nhật UI: {ex.Message}", "Lỗi",
+                                    MessageBoxButton.OK, MessageBoxImage.Error);
                             }
                         }));
                     }
@@ -170,16 +171,16 @@ namespace SystemMonitor.Services
                     {
                         Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                         {
-                            System.Windows.MessageBox.Show($"Lỗi khi lấy danh sách process: {ex.Message}", "Lỗi",
-                                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                            MessageBox.Show($"Lỗi khi lấy danh sách process: {ex.Message}", "Lỗi",
+                                MessageBoxButton.OK, MessageBoxImage.Error);
                         }));
                     }
                 });
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Lỗi khởi tạo: {ex.Message}", "Lỗi",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show($"Lỗi khởi tạo: {ex.Message}", "Lỗi",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -191,8 +192,8 @@ namespace SystemMonitor.Services
                 var newProcesses = new Dictionary<int, ProcessInfo>();
                 var changedProcesses = new List<ProcessInfo>();
 
-                // FIXED: Tạo processes trên background thread, không tạo UI objects
-                var processData = new List<(int Id, string Name, long Memory, double Cpu, string Status, Process Process)>();
+                // Tạo processes trên background thread
+                var processData = new List<(int Id, string Name, long Memory, double Cpu, string Status, ProcessPriorityClass Priority, Process Process)>();
 
                 foreach (var process in Process.GetProcesses().Where(p => !string.IsNullOrEmpty(p.ProcessName)))
                 {
@@ -203,8 +204,9 @@ namespace SystemMonitor.Services
                         var memory = GetProcessMemoryUsage(process);
                         var cpu = CalculateCpuUsage(process, currentTime);
                         var status = GetProcessStatus(process);
+                        var priority = GetProcessPriority(process);
 
-                        processData.Add((id, name, memory, cpu, status, process));
+                        processData.Add((id, name, memory, cpu, status, priority, process));
                     }
                     catch
                     {
@@ -212,7 +214,7 @@ namespace SystemMonitor.Services
                     }
                 }
 
-                // FIXED: Tạo ProcessInfo objects trên UI thread
+                // Tạo ProcessInfo objects trên UI thread
                 Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                 {
                     try
@@ -226,6 +228,7 @@ namespace SystemMonitor.Services
                                 MemoryUsage = data.Memory,
                                 CpuUsage = data.Cpu,
                                 Status = data.Status,
+                                Priority = data.Priority,
                                 Icon = GetProcessIcon(data.Process)
                             };
 
@@ -271,7 +274,8 @@ namespace SystemMonitor.Services
                 Name = process.ProcessName,
                 MemoryUsage = GetProcessMemoryUsage(process),
                 CpuUsage = CalculateCpuUsage(process, currentTime),
-                Status = GetProcessStatus(process)
+                Status = GetProcessStatus(process),
+                Priority = GetProcessPriority(process)
             };
 
             Application.Current?.Dispatcher.Invoke(() =>
@@ -312,6 +316,12 @@ namespace SystemMonitor.Services
 
             // Kiểm tra thay đổi Status
             if (newProcessInfo.Status != oldProcessInfo.Status)
+            {
+                return true;
+            }
+
+            // Kiểm tra thay đổi Priority
+            if (newProcessInfo.Priority != oldProcessInfo.Priority)
             {
                 return true;
             }
@@ -373,6 +383,7 @@ namespace SystemMonitor.Services
                                 existing.CpuUsage = changedProcess.CpuUsage;
                                 existing.MemoryUsage = changedProcess.MemoryUsage;
                                 existing.Status = changedProcess.Status;
+                                existing.Priority = changedProcess.Priority;
                             }
                             else if (_displayedProcesses.Count < MAX_DISPLAYED_PROCESSES)
                             {
@@ -424,7 +435,6 @@ namespace SystemMonitor.Services
             }));
         }
 
-        // FIXED: Tính toán CPU chính xác hơn
         private double CalculateCpuUsage(Process process, DateTime currentTime)
         {
             try
@@ -440,7 +450,6 @@ namespace SystemMonitor.Services
 
                     if (realTimeDiff > 0)
                     {
-                        // FIXED: Chia cho số core CPU và nhân 100
                         var cpuUsage = (cpuTimeDiff / realTimeDiff) * 100.0 / _processorCount;
 
                         _previousProcessInfo[processId] = new ProcessCpuInfo
@@ -449,7 +458,6 @@ namespace SystemMonitor.Services
                             Timestamp = currentTime
                         };
 
-                        // FIXED: Giới hạn không vượt quá 100%
                         return Math.Max(0, Math.Min(cpuUsage, 100.0));
                     }
                 }
@@ -468,19 +476,11 @@ namespace SystemMonitor.Services
             }
         }
 
-        // FIXED: Lấy memory chính xác hơn như Task Manager
         private long GetProcessMemoryUsage(Process process)
         {
             try
             {
-                // Task Manager sử dụng Working Set (Physical Memory)
-                // Có thể thêm Private Bytes nếu cần
                 long workingSet = process.WorkingSet64 / (1024 * 1024); // Convert to MB
-
-                // Nếu muốn hiển thị như Task Manager hoàn toàn:
-                // long privateBytes = process.PrivateMemorySize64 / (1024 * 1024);
-                // return privateBytes; // Uncomment this line nếu muốn dùng Private Bytes
-
                 return workingSet;
             }
             catch
@@ -496,10 +496,8 @@ namespace SystemMonitor.Services
                 if (process.HasExited)
                     return "Đã thoát";
 
-                // FIXED: Thêm kiểm tra suspended process
                 try
                 {
-                    // Kiểm tra nếu process bị suspend
                     foreach (ProcessThread thread in process.Threads)
                     {
                         if (thread.ThreadState == System.Diagnostics.ThreadState.Wait &&
@@ -521,6 +519,19 @@ namespace SystemMonitor.Services
                 return "Không xác định";
             }
         }
+
+        private ProcessPriorityClass GetProcessPriority(Process process)
+        {
+            try
+            {
+                return process.PriorityClass;
+            }
+            catch
+            {
+                return ProcessPriorityClass.Normal; // Giá trị mặc định nếu không lấy được
+            }
+        }
+
         private ImageSource GetProcessIcon(Process process)
         {
             try
@@ -629,7 +640,6 @@ namespace SystemMonitor.Services
         {
             try
             {
-                // FIXED: Đảm bảo chạy trên UI thread
                 if (!Application.Current.Dispatcher.CheckAccess())
                 {
                     return Application.Current.Dispatcher.Invoke(() => CreateTextIcon(text));
@@ -661,7 +671,6 @@ namespace SystemMonitor.Services
                     hBitmap, IntPtr.Zero, Int32Rect.Empty,
                     BitmapSizeOptions.FromEmptyOptions());
 
-                // FIXED: Freeze để thread-safe
                 imageSource?.Freeze();
 
                 DeleteObject(hBitmap);
@@ -693,14 +702,37 @@ namespace SystemMonitor.Services
                         _previousProcessInfo.Remove(processId);
                     }
 
-                    // Refresh sau khi kill
                     Task.Delay(1000).ContinueWith(_ => RefreshProcessList());
                 }
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Không thể kết thúc process: {ex.Message}", "Lỗi",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show($"Không thể kết thúc process: {ex.Message}", "Lỗi",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        public void SetProcessPriority(int processId, ProcessPriorityClass priority)
+        {
+            try
+            {
+                var process = Process.GetProcessById(processId);
+                if (process == null || process.HasExited)
+                {
+                    MessageBox.Show("Tiến trình không tồn tại hoặc đã kết thúc!", "Lỗi",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                process.PriorityClass = priority;
+                RefreshProcessList(); // Cập nhật danh sách để phản ánh thay đổi
+                MessageBox.Show($"Đã đặt ưu tiên cho {process.ProcessName} thành {priority}.", "Thành công",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi đặt ưu tiên: {ex.Message}", "Lỗi",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -740,9 +772,9 @@ namespace SystemMonitor.Services
                 if (success)
                 {
                     MessageBox.Show($"Đã thiết lập giới hạn tài nguyên cho {process.ProcessName}:\n" +
-                                  $"RAM: {memoryLimitMB}MB\n" +
-                                  $"CPU: {cpuLimitPercent}%",
-                                  "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+                                    $"RAM: {memoryLimitMB}MB\n" +
+                                    $"CPU: {cpuLimitPercent}%",
+                                    "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
@@ -802,6 +834,7 @@ namespace SystemMonitor.Services
         private double _cpuUsage;
         private string _status;
         private ImageSource _icon;
+        private ProcessPriorityClass _priority;
 
         public int Id
         {
@@ -837,6 +870,29 @@ namespace SystemMonitor.Services
         {
             get => _icon;
             set { _icon = value; OnPropertyChanged(); }
+        }
+
+        public ProcessPriorityClass Priority
+        {
+            get => _priority;
+            set { _priority = value; OnPropertyChanged(); OnPropertyChanged(nameof(PriorityText)); }
+        }
+
+        public string PriorityText
+        {
+            get
+            {
+                return _priority switch
+                {
+                    ProcessPriorityClass.RealTime => "Thời gian thực",
+                    ProcessPriorityClass.High => "Cao",
+                    ProcessPriorityClass.AboveNormal => "Trên trung bình",
+                    ProcessPriorityClass.Normal => "Bình thường",
+                    ProcessPriorityClass.BelowNormal => "Dưới trung bình",
+                    ProcessPriorityClass.Idle => "Rảnh rỗi",
+                    _ => "Không xác định"
+                };
+            }
         }
 
         public string MemoryUsageText => $"{MemoryUsage} MB";

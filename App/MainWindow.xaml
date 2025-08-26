@@ -797,9 +797,9 @@
 
                             <!-- Process list -->
                             <ListView x:Name="ProcessListView" 
-          Height="400" 
-          GridViewColumnHeader.Click="ProcessListView_ColumnHeaderClick"
-          ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                          Height="400" 
+                          GridViewColumnHeader.Click="ProcessListView_ColumnHeaderClick"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto">
 
                                 <!-- Context Menu for ListView -->
                                 <ListView.ContextMenu>
@@ -808,11 +808,11 @@
                                         <Separator/>
                                         <MenuItem Header="⚠️ Kết thúc tiến trình" Click="EndProcess_ContextMenu_Click"/>
                                         <Separator/>
-                                        <!-- Thêm các menu item mới -->
                                         <MenuItem Header="🎛️ Đặt giới hạn tài nguyên" Click="SetResourceLimit_ContextMenu_Click"/>
                                         <MenuItem Header="🚫 Xóa giới hạn tài nguyên" Click="RemoveResourceLimit_ContextMenu_Click"/>
                                         <Separator/>
                                         <MenuItem Header="📊 Xem tất cả giới hạn tài nguyên" Click="ViewResourceLimits_Click"/>
+                                        <Separator/>
                                     </ContextMenu>
                                 </ListView.ContextMenu>
 
@@ -824,12 +824,12 @@
                                                 <DataTemplate>
                                                     <StackPanel Orientation="Horizontal">
                                                         <Image Source="{Binding Icon}" 
-                                   Width="16" 
-                                   Height="16" 
-                                   Margin="0,0,8,0"
-                                   VerticalAlignment="Center"/>
+                                                   Width="16" 
+                                                   Height="16" 
+                                                   Margin="0,0,8,0"
+                                                   VerticalAlignment="Center"/>
                                                         <TextBlock Text="{Binding Name}" 
-                                       VerticalAlignment="Center"/>
+                                                       VerticalAlignment="Center"/>
                                                     </StackPanel>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
@@ -839,12 +839,13 @@
                                         <GridViewColumn Header="Bộ nhớ (MB)" Width="120" DisplayMemberBinding="{Binding MemoryUsageText}"/>
                                         <GridViewColumn Header="CPU (%)" Width="80" DisplayMemberBinding="{Binding CpuUsageText}"/>
                                         <GridViewColumn Header="Trạng thái" Width="150" DisplayMemberBinding="{Binding Status}"/>
-                                        <!-- Removed "Action" column with Kill button -->
+                                        <!-- Thêm cột Priority -->
+                                        <GridViewColumn Header="Ưu tiên" Width="100" DisplayMemberBinding="{Binding PriorityText}"/>
                                     </GridView>
                                 </ListView.View>
                             </ListView>
 
-                            <TextBlock Text="⚠️ Cảnh báo: Hãy cẩn thận khi kết thúc tiến trình, điều này có thể ảnh hưởng đến hệ thống!" 
+                            <TextBlock Text="⚠️ Cảnh báo: Hãy cẩn thận khi kết thúc tiến trình hoặc thay đổi ưu tiên, điều này có thể ảnh hưởng đến hệ thống!" 
                            Foreground="Orange" 
                            FontWeight="SemiBold" 
                            Margin="0,10,0,0" 
