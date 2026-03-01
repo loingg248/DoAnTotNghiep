@@ -1,6 +1,8 @@
-﻿using System;
+﻿using App.Models;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -14,10 +16,13 @@ namespace SystemMonitor.Services
     {
         private MonitoringService _monitoringService;
 
-        public TextBlock AutoAdjustStatus { get; set; }
+        public TextBlock SmartModeStatus { get; set; }
 
         public int savedMinFrequency { get; set; } = 5;
         public int savedMaxFrequency { get; set; } = 100;
+
+        private SmartModeML _smartML = new SmartModeML(); 
+        private bool _mlReady = false;
 
         public PowerManagementService()
         {
@@ -30,7 +35,7 @@ namespace SystemMonitor.Services
 
         public void SetUIControls(TextBlock autoAdjustStatus)
         {
-            AutoAdjustStatus = autoAdjustStatus;
+            SmartModeStatus = autoAdjustStatus;
         }
 
         public void LoadPowerPlans(ComboBox powerPlanComboBox)
@@ -314,86 +319,114 @@ namespace SystemMonitor.Services
 
         public async void StartAutoAdjustCpu(CancellationToken cancellationToken)
         {
+            string lastState = ""; // Lưu trạng thái trước đó
+
             try
             {
+                if (!_mlReady)
+                {
+                    if (File.Exists("Logs/system_usage.csv"))
+                    {
+                        var lines = File.ReadAllLines("Logs/system_usage.csv");
+                        if (lines.Length > 10)
+                        {
+                            _smartML.Train("Logs/system_usage.csv");
+                            _mlReady = true;
+                        }
+                        else
+                        {
+                            Debug.WriteLine("[Smart Mode ML] Chưa đủ dữ liệu để huấn luyện.");
+                        }
+                    }
+                }
+
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    if (_monitoringService?.cpuUsageCounter != null)
+                    if (_monitoringService?.cpuUsageCounter != null && _mlReady)
                     {
                         float cpuUsage = _monitoringService.cpuUsageCounter.NextValue();
-                        Debug.WriteLine($"[Chế độ thông minh] Sử dụng CPU: {cpuUsage:F1}%");
+                        float gpuUsage = _monitoringService?.gpuUsageCounter?.NextValue() ?? 0;
+                        float ramUsage = _monitoringService?.availableMemoryCounter != null
+                            ? 100 - (_monitoringService.availableMemoryCounter.NextValue() / 1024f / _monitoringService.GetTotalRamGB() * 100)
+                            : 0;
 
-                        int minFreq = 0;
-                        int maxFreq = 100;
-                        string mode = "";
+                        var input = new SystemUsageData
+                        {
+                            CpuUsage = cpuUsage,
+                            GpuUsage = gpuUsage,
+                            RamUsage = ramUsage
+                        };
 
-                        // Logic chế độ thông minh dựa trên ngưỡng sử dụng CPU
-                        if (cpuUsage <= 30) // Sử dụng thấp (0-30%): Chế độ tiết kiệm năng lượng
-                        {
-                            minFreq = 5;
-                            maxFreq = 40;
-                            mode = "Chế độ tiết kiệm năng lượng";
-                        }
-                        else if (cpuUsage > 30 && cpuUsage <= 70) // Sử dụng trung bình (30-70%): Chế độ cân bằng
-                        {
-                            minFreq = 20;
-                            maxFreq = 70;
-                            mode = "Chế độ cân bằng";
-                        }
-                        else // Sử dụng cao (70%+): Chế độ hiệu suất
-                        {
-                            minFreq = 50;
-                            maxFreq = 100;
-                            mode = "Chế độ hiệu suất";
-                        }
+                        string predictedState = _smartML.Predict(input);
 
-                        // Chỉ điều chỉnh nếu giá trị tần số đã thay đổi
-                        if (minFreq != savedMinFrequency || maxFreq != savedMaxFrequency)
+                        // Chỉ xử lý khi trạng thái thay đổi
+                        if (predictedState != lastState)
                         {
-                            await SetCpuFrequency(minFreq, maxFreq);
+                            int minFreq = 0;
+                            int maxFreq = 0;
+                            string icon = "";
 
-                            if (AutoAdjustStatus != null)
+                            switch (predictedState)
                             {
-                                App.Current.Dispatcher.Invoke(() => {
-                                    AutoAdjustStatus.Text = $"Chế độ thông minh: {mode} - {minFreq}%-{maxFreq}% (CPU: {cpuUsage:F1}%)";
-                                });
+                                case "Gaming":
+                                    minFreq = 50;
+                                    maxFreq = 100;
+                                    icon = "🎮";
+                                    break;
+                                case "Office":
+                                    minFreq = 20;
+                                    maxFreq = 70;
+                                    icon = "💼";
+                                    break;
+                                case "Idle":
+                                    minFreq = 5;
+                                    maxFreq = 40;
+                                    icon = "🌙";
+                                    break;
+                                default:
+                                    icon = "🤖";
+                                    break;
                             }
 
-                            Debug.WriteLine($"[Chế độ thông minh] Chuyển sang {mode}: {minFreq}%-{maxFreq}%");
+                            await SetCpuFrequency(minFreq, maxFreq);
+
+                            App.Current.Dispatcher.Invoke(() =>
+                            {
+                                SmartModeStatus.Text = $"{icon} Chế độ hiện tại: {predictedState}";
+                            });
+
+                            Debug.WriteLine($"[Smart Mode ML] Chuyển từ {lastState} sang {predictedState}");
+                            lastState = predictedState;
                         }
                     }
 
-                    // Kiểm tra mỗi 2 giây để điều chỉnh linh hoạt hơn
-                    await Task.Delay(2000, cancellationToken);
+                    // Giảm tần suất xuống 5 giây để nhẹ hơn
+                    await Task.Delay(5000, cancellationToken);
                 }
             }
             catch (TaskCanceledException)
             {
-                // Mong đợi khi yêu cầu hủy bỏ
-                Debug.WriteLine("[Chế độ thông minh] Điều chỉnh tự động đã bị hủy");
+                Debug.WriteLine("[Smart Mode ML] Auto adjustment cancelled.");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[Chế độ thông minh] Lỗi trong điều chỉnh tự động CPU: {ex.Message}");
-
-                if (AutoAdjustStatus != null)
+                Debug.WriteLine($"[Smart Mode ML] Error: {ex.Message}");
+                App.Current.Dispatcher.Invoke(() =>
                 {
-                    App.Current.Dispatcher.Invoke(() => {
-                        AutoAdjustStatus.Text = $"Lỗi chế độ thông minh: {ex.Message}";
-                    });
-                }
+                    SmartModeStatus.Text = $"Smart Mode ML Error: {ex.Message}";
+                });
             }
             finally
             {
-                Debug.WriteLine("[Chế độ thông minh] Điều chỉnh tự động CPU đã dừng");
-
-                if (AutoAdjustStatus != null)
+                Debug.WriteLine("[Smart Mode ML] Auto adjustment stopped.");
+                App.Current.Dispatcher.Invoke(() =>
                 {
-                    App.Current.Dispatcher.Invoke(() => {
-                        AutoAdjustStatus.Text = "Chế độ thông minh đã dừng - Điều chỉnh tự động đang bị vô hiệu hóa";
-                    });
-                }
+                    SmartModeStatus.Text = "Smart Mode ML đã dừng.";
+                });
             }
         }
+
+
+
     }
 }

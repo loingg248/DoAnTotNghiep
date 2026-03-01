@@ -1,12 +1,14 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.EMMA;
+using LibreHardwareMonitor.Hardware;
+using System;
 using System.Diagnostics;
+using System.IO;
 using System.IO;
 using System.Linq;
 using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
-using LibreHardwareMonitor.Hardware;
 
 namespace SystemMonitor.Services
 {
@@ -39,9 +41,9 @@ namespace SystemMonitor.Services
 
         public Computer? computer;
         public PerformanceCounter? cpuUsageCounter;
-        private PerformanceCounter? availableMemoryCounter;
-        private PerformanceCounter? gpuUsageCounter;
-        private PerformanceCounter? diskUsageCounter;
+        public PerformanceCounter? availableMemoryCounter;
+        public PerformanceCounter? gpuUsageCounter;
+        public PerformanceCounter? diskUsageCounter;
 
         // Biến để theo dõi GPU ưu tiên
         private IHardware? priorityGpu = null;
@@ -63,10 +65,26 @@ namespace SystemMonitor.Services
         public TextBlock DiskTemp { get; set; }
         public TextBlock DiskSpace { get; set; }
 
+        private readonly SystemUsageLogger _logger = new SystemUsageLogger();
+
         public MonitoringService()
         {
             InitializeComputer();
         }
+
+        public float GetTotalRamGB()
+        {
+            try
+            {
+                var computerInfo = new Microsoft.VisualBasic.Devices.ComputerInfo();
+                return computerInfo.TotalPhysicalMemory / 1024f / 1024f / 1024f;
+            }
+            catch
+            {
+                return 8f; // fallback nếu không lấy được, giả sử máy có 8GB RAM
+            }
+        }
+
 
         public void SetUIControls(
             TextBlock cpuName, TextBlock cpuTemp, TextBlock cpuLoad, TextBlock cpuClock,
@@ -253,6 +271,42 @@ namespace SystemMonitor.Services
             }
         }
 
+
+        private void LogMetrics(SystemInfoEventArgs info)
+        {
+            try
+            {
+                string logFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs", "metrics.csv");
+                Directory.CreateDirectory(Path.GetDirectoryName(logFile));
+
+                bool fileExists = File.Exists(logFile);
+                using (var writer = new StreamWriter(logFile, append: true))
+                {
+                    if (!fileExists)
+                    {
+                        writer.WriteLine("CpuUsage,RamUsage,GpuUsage,DiskUsage");
+                    }
+
+                    writer.WriteLine($"{info.CpuUsage},{info.RamUsage},{info.GpuUsage},{info.DiskUsage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Lỗi ghi log metrics: {ex.Message}");
+            }
+        }
+
+        private string GetLabel(SystemInfoEventArgs info)
+        {
+            if (info.CpuUsage > 70 || info.GpuUsage > 60)
+                return "Gaming";
+            else if (info.CpuUsage > 20 || info.RamUsage > 30)
+                return "Office";
+            else
+                return "Idle";
+        }
+
+
         public void RefreshSystemInfo()
         {
             if (computer == null) return;
@@ -275,6 +329,9 @@ namespace SystemMonitor.Services
                 {
                     systemInfo.DiskUsage = UpdateDiskInfo(hardware, systemInfo);
                 }
+                string label = GetLabel(systemInfo);
+                _logger.Log(systemInfo, label);
+
             }
 
             // Cập nhật thông tin GPU
@@ -317,6 +374,7 @@ namespace SystemMonitor.Services
             {
                 App.Current?.Dispatcher.Invoke(() => DataUpdated?.Invoke(this, systemInfo));
             }
+            LogMetrics(systemInfo);
         }
 
         private float UpdateCpuInfo(IHardware hardware, SystemInfoEventArgs systemInfo)

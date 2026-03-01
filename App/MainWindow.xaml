@@ -147,15 +147,25 @@
         <Border x:Name="WarningBorder" 
         DockPanel.Dock="Top" 
         Margin="15,10,15,10" 
-        Padding="15,10" 
+        Padding="12,8"
         CornerRadius="8"
         Visibility="Collapsed">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock x:Name="WarningStatus" 
-                   Text="Hệ thống đang hoạt động bình thường" 
-                   FontWeight="SemiBold" 
-                   VerticalAlignment="Center"/>
-            </StackPanel>
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <TextBlock Text="⚠️" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock x:Name="WarningStatus" 
+                       Text="Hệ thống đang hoạt động bình thường" 
+                       FontWeight="SemiBold" 
+                       VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
+                    <Button Content="Mở Cài đặt cảnh báo" Click="ShowAlertSettings_Click"
+                            Background="#1976D2" BorderBrush="#1976D2" Padding="10,6" Margin="6,0"/>
+                    <Button Content="Đóng" Click="CloseWarning_Click"
+                            Background="#6C757D" BorderBrush="#6C757D" Padding="10,6" Margin="6,0"/>
+                </StackPanel>
+            </DockPanel>
         </Border>
 
         <!-- Tab Control for different pages -->
@@ -426,9 +436,11 @@
                                         <TextBlock Text="Điều khiển Thông minh" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                     </StackPanel>
 
-                                    <TextBlock x:Name="AutoAdjustStatus" 
-                                   Text="Điều chỉnh tự động đã tắt" 
-                                   FontSize="12" Foreground="#666" Margin="0,0,0,12"/>
+                                    <TextBlock x:Name="SmartModeStatus"
+                                                 Text="Smart Mode ML chưa khởi động"
+                                                 FontSize="12"
+                                                 Foreground="#666"
+                                                 Margin="0,0,0,12"/>
 
                                     <Button x:Name="AutoAdjustCpuButton" 
                                 Content="🚀 Bật Chế độ Thông minh" 
@@ -437,13 +449,6 @@
                                 Margin="0,0,0,10"/>
 
                                     <Border Background="#F8F9FA" CornerRadius="6" Padding="10">
-                                        <StackPanel>
-                                            <TextBlock Text="Chế độ Thông minh tự động điều chỉnh tần số CPU dựa trên mức sử dụng:" 
-                                           FontSize="11" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                                            <TextBlock Text="• Sử dụng thấp (0-30%): Chế độ tiết kiệm điện" FontSize="10" Margin="0,2"/>
-                                            <TextBlock Text="• Sử dụng vừa (30-70%): Chế độ cân bằng" FontSize="10" Margin="0,2"/>
-                                            <TextBlock Text="• Sử dụng cao (70%+): Chế độ hiệu suất" FontSize="10" Margin="0,2"/>
-                                        </StackPanel>
                                     </Border>
                                 </StackPanel>
                             </Border>
@@ -501,7 +506,7 @@
                             <Grid x:Name="HeaderSection" Margin="0,0,0,25">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="300"/>
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
@@ -512,12 +517,28 @@
                                    FontSize="14" Foreground="#666" TextWrapping="Wrap"/>
                                 </StackPanel>
 
-                                <Button Grid.Column="1" Content="💾 Lưu cài đặt" 
-                            Click="SaveWarningSettings_Click"
-                            Background="#4CAF50" Foreground="White"
-                            BorderBrush="#4CAF50" BorderThickness="1"
-                            Padding="16,10" FontWeight="SemiBold"
-                            MinWidth="130" VerticalAlignment="Center"/>
+                                <!-- Right-aligned action area: Save + Quick toggles -->
+                                <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Button Content="💾 Lưu cài đặt" 
+                                Click="SaveWarningSettings_Click"
+                                Background="#4CAF50" Foreground="White"
+                                BorderBrush="#4CAF50" BorderThickness="1"
+                                Padding="12,10" FontWeight="SemiBold"
+                                MinWidth="160" Margin="0,0,0,8"/>
+
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button x:Name="ShowSolutionsButton" Content="💡 Hiện giải pháp" 
+                                    Click="ShowSolutions_Click" 
+                                    Background="#FF9800" Foreground="White" BorderBrush="#FF9800"
+                                    Padding="12,8" FontWeight="SemiBold"
+                                    MinWidth="140" Margin="0,0,8,0"/>
+                                        <Button x:Name="HideSolutionsButton" Content="⚙️ Quay lại" 
+                                    Click="HideSolutions_Click" 
+                                    Background="#6C757D" Foreground="White" BorderBrush="#6C757D"
+                                    Padding="12,8" FontWeight="SemiBold"
+                                    MinWidth="140" Visibility="Collapsed"/>
+                                    </StackPanel>
+                                </StackPanel>
                             </Grid>
 
                             <!-- Settings Grid -->
@@ -665,22 +686,6 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Solutions Toggle Button -->
-                            <StackPanel x:Name="ToggleButtonSection" HorizontalAlignment="Center">
-                                <Button x:Name="ShowSolutionsButton" Content="💡 Hiển thị giải pháp" 
-                            Click="ShowSolutions_Click" 
-                            Background="#FF9800" Foreground="White" BorderBrush="#FF9800"
-                            Padding="20,12" FontWeight="SemiBold"
-                            MinWidth="180" Margin="0,0,0,15"/>
-
-                                <Button x:Name="HideSolutionsButton" Content="⚙️ Quay lại cài đặt" 
-                            Click="HideSolutions_Click" 
-                            Background="#6C757D" Foreground="White" BorderBrush="#6C757D"
-                            Padding="20,12" FontWeight="SemiBold"
-                            MinWidth="180" Margin="0,0,0,15"
-                            Visibility="Collapsed"/>
-                            </StackPanel>
-
                             <!-- Solutions Header -->
                             <Grid x:Name="SolutionsHeader" Margin="0,10,0,15" Visibility="Collapsed">
                                 <Grid.ColumnDefinitions>
@@ -696,16 +701,27 @@
                                    FontSize="14" Foreground="#666" TextWrapping="Wrap"/>
                                 </StackPanel>
 
-                                <Border Grid.Column="1" Background="#FFF3E0" BorderBrush="#FF9800" 
-                            BorderThickness="1" Padding="12,8" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⚡" FontSize="16" Margin="0,0,8,0" 
-                                       VerticalAlignment="Center"/>
-                                        <TextBlock Text="Chế độ giải pháp nhanh" 
-                                       Foreground="#E65100" FontWeight="SemiBold"
-                                       VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10,0,0,0">
+                                    <Border Background="#FFF3E0" BorderBrush="#FF9800" 
+                BorderThickness="1" Padding="12,8" VerticalAlignment="Center" Margin="0,0,8,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="⚡" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Chế độ giải pháp nhanh" Foreground="#E65100" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Nút Quay lại: gọi cùng handler HideSolutions_Click để trở về giao diện cài đặt -->
+                                    <Button x:Name="BackFromSolutionsButton"
+                Content="↩️ Quay lại"
+                Click="HideSolutions_Click"
+                Background="#6C757D"
+                Foreground="White"
+                BorderBrush="#6C757D"
+                Padding="10,8"
+                FontWeight="SemiBold"
+                MinWidth="110"
+                Visibility="Collapsed"/>
+                                </StackPanel>
                             </Grid>
 
                             <!-- Solutions Panel -->
@@ -808,7 +824,7 @@
                                         <Separator/>
                                         <MenuItem Header="⚠️ Kết thúc tiến trình" Click="EndProcess_ContextMenu_Click"/>
                                         <Separator/>
-                                        <MenuItem Header="🎛️ Đặt giới hạn tài nguyên" Click="SetResourceLimit_ContextMenu_Click"/>
+                                        <MenuItem Header="🏛️ Đặt giới hạn tài nguyên" Click="SetResourceLimit_ContextMenu_Click"/>
                                         <MenuItem Header="🚫 Xóa giới hạn tài nguyên" Click="RemoveResourceLimit_ContextMenu_Click"/>
                                         <Separator/>
                                         <MenuItem Header="📊 Xem tất cả giới hạn tài nguyên" Click="ViewResourceLimits_Click"/>
@@ -836,8 +852,25 @@
                                         </GridViewColumn>
 
                                         <GridViewColumn Header="ID" Width="60" DisplayMemberBinding="{Binding Id}"/>
-                                        <GridViewColumn Header="Bộ nhớ (MB)" Width="120" DisplayMemberBinding="{Binding MemoryUsageText}"/>
-                                        <GridViewColumn Header="CPU (%)" Width="80" DisplayMemberBinding="{Binding CpuUsageText}"/>
+
+                                        <!-- Thay đổi: bind vào thuộc tính số và dùng CellTemplate để format hiển thị.
+                                             DisplayMemberBinding vẫn giữ để hỗ trợ sorting theo giá trị số. -->
+                                        <GridViewColumn Header="Bộ nhớ (MB)" Width="120" DisplayMemberBinding="{Binding MemoryUsage}">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding MemoryUsage, StringFormat={}{0} MB}"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+
+                                        <GridViewColumn Header="CPU (%)" Width="80" DisplayMemberBinding="{Binding CpuUsage}">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding CpuUsage, StringFormat={}{0:F1}%}"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+
                                         <GridViewColumn Header="Trạng thái" Width="150" DisplayMemberBinding="{Binding Status}"/>
                                         <!-- Thêm cột Priority -->
                                         <GridViewColumn Header="Ưu tiên" Width="100" DisplayMemberBinding="{Binding PriorityText}"/>

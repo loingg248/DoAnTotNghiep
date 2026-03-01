@@ -1,19 +1,19 @@
-﻿using System;
+﻿using Hardcodet.Wpf.TaskbarNotification;
+using LibreHardwareMonitor.Hardware;
+using System;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Threading;
+using SystemMonitor.Helpers;
 using SystemMonitor.Models;
 using SystemMonitor.Services;
-using SystemMonitor.Helpers;
-using System.Windows.Controls;
-using LibreHardwareMonitor.Hardware;
-using System.Diagnostics;
-using System.Windows.Media;
-using System.ComponentModel;
-using System.Windows.Data;
-using Hardcodet.Wpf.TaskbarNotification;
-using System.Windows.Threading;
 using static SystemMonitor.Services.WarningService;
-using System.Windows.Input;
 
 
 namespace SystemMonitor
@@ -49,6 +49,7 @@ namespace SystemMonitor
         private Button _showSolutionsButton;
         private List<SolutionRecommendation> _currentSolutions;
 
+        private bool _isSmartModeEnabled = false;
 
         public MainWindow()
         {
@@ -80,7 +81,7 @@ namespace SystemMonitor
 
             _chartService.SetPowerManagementService(_powerManagementService);
 
-            _powerManagementService.SetUIControls(AutoAdjustStatus);
+            _powerManagementService.SetUIControls(SmartModeStatus);
 
             _powerManagementService.SetMonitoringService(_monitoringService);
 
@@ -110,6 +111,7 @@ namespace SystemMonitor
             _solutionsList = FindName("SolutionsList") as ItemsControl;
             _showSolutionsButton = FindName("ShowSolutionsButton") as Button;
         }
+
 
         private void InitializeBackgroundMode()
         {
@@ -184,7 +186,21 @@ namespace SystemMonitor
 
             // Bắt đầu timer chạy ngầm
             _backgroundTimer.Start();
+
+            // Nếu Smart Mode ML đang bật thì tiếp tục hoạt động khi chạy ngầm
+            if (_isSmartModeEnabled && _autoAdjustTokenSource != null)
+            {
+                try
+                {
+                    _powerManagementService.StartAutoAdjustCpu(_autoAdjustTokenSource.Token);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Lỗi Smart Mode ML khi chạy ngầm: {ex.Message}");
+                }
+            }
         }
+
 
         private void StopBackgroundMode()
         {
@@ -464,20 +480,36 @@ namespace SystemMonitor
             }
         }
 
+        private CancellationTokenSource _autoAdjustTokenSource;
+
         private void AutoAdjustCpuButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!isAutoAdjustEnabled)
+            try
             {
-                isAutoAdjustEnabled = true;
+                if (_autoAdjustTokenSource != null)
+                {
+                    // Nếu đang chạy thì dừng lại
+                    _autoAdjustTokenSource.Cancel();
+                    _autoAdjustTokenSource = null;
+
+                    SmartModeStatus.Text = "Smart Mode ML đã dừng.";
+                    AutoAdjustCpuButton.Content = "🚀 Bật Chế độ Thông minh";
+                    return;
+                }
+
+                // Khởi động chế độ ML
+                _autoAdjustTokenSource = new CancellationTokenSource();
+                var token = _autoAdjustTokenSource.Token;
+
                 AutoAdjustCpuButton.Content = "⏹ Dừng Điều Chỉnh Tự Động";
-                autoAdjustCancellationTokenSource = new CancellationTokenSource();
-                _powerManagementService.StartAutoAdjustCpu(autoAdjustCancellationTokenSource.Token);
+
+                // Gọi ngay để hiển thị chế độ hiện tại
+                _powerManagementService.StartAutoAdjustCpu(token);
+                _isSmartModeEnabled = true;
             }
-            else
+            catch (Exception ex)
             {
-                isAutoAdjustEnabled = false;
-                AutoAdjustCpuButton.Content = "🤖 Bắt Đầu Điều Chỉnh Tự Động";
-                autoAdjustCancellationTokenSource?.Cancel();
+                SmartModeStatus.Text = $"Lỗi khởi động Smart Mode ML: {ex.Message}";
             }
         }
 
@@ -998,6 +1030,12 @@ namespace SystemMonitor
             SolutionsPanel.Visibility = Visibility.Visible;
             HideSolutionsButton.Visibility = Visibility.Visible;
 
+            // Hiện nút Quay lại ở header (nút mới)
+            if (FindName("BackFromSolutionsButton") is Button backBtn)
+            {
+                backBtn.Visibility = Visibility.Visible;
+            }
+
             // Kiểm tra và gán dữ liệu cho SolutionsList nếu có
             if (_currentSolutions?.Any() == true)
             {
@@ -1017,6 +1055,12 @@ namespace SystemMonitor
             SolutionsHeader.Visibility = Visibility.Collapsed;
             SolutionsPanel.Visibility = Visibility.Collapsed;
             HideSolutionsButton.Visibility = Visibility.Collapsed;
+
+            // Ẩn nút Quay lại ở header (nút mới)
+            if (FindName("BackFromSolutionsButton") is Button backBtn)
+            {
+                backBtn.Visibility = Visibility.Collapsed;
+            }
         }
 
         private void Solution_Click(object sender, MouseButtonEventArgs e)
@@ -1380,8 +1424,6 @@ namespace SystemMonitor
             }
         }
 
-        // Tiếp tục các event handlers cho các nút giải pháp
-
         private void ExecuteProcessManagementAction()
         {
             var tabControl = FindChildOfType<TabControl>(this);
@@ -1558,6 +1600,11 @@ namespace SystemMonitor
 
                 quickActionsPanel.Visibility = Visibility.Visible;
             }
+        }
+
+        private void CloseWarning_Click(object sender, RoutedEventArgs e)
+        {
+            WarningBorder.Visibility = Visibility.Collapsed;
         }
     }
 }
